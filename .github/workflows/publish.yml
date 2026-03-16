@@ -1,0 +1,31 @@
+name: Release
+
+on:
+  release:
+    types: [published]
+
+# Packagist auto-syncs via GitHub webhook integration.
+# No CI step needed — just ensure the Packagist webhook is configured
+# in the GitHub repo settings (Settings > Webhooks).
+
+jobs:
+  test:
+    name: Test on release
+    runs-on: ubuntu-latest
+    steps:
+      - uses: actions/checkout@v4
+
+      - name: Setup PHP
+        uses: shivammathur/setup-php@v2
+        with:
+          php-version: '8.3'
+          extensions: curl, json
+
+      - name: Install dependencies
+        run: composer install --prefer-dist --no-progress
+
+      - name: Run tests
+        run: vendor/bin/phpunit
+
+      - name: Verify package metadata
+        run: composer validate --strict
