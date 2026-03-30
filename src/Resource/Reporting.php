@@ -9,7 +9,7 @@ use Facturino\HttpClient;
 /**
  * Reporting resource — /v1/reporting
  *
- * VAT and revenue reports (Essential+ plans).
+ * VAT and revenue reports (Essential, Pro, Cabinet plans).
  */
 class Reporting
 {

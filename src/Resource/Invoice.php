@@ -266,4 +266,28 @@ class Invoice
     {
         return HttpClient::request('POST', self::BASE_PATH . '/' . $id . '/payment-token');
     }
+
+    /**
+     * Create an incoming invoice (received from a supplier).
+     *
+     * @param array<string, mixed> $params  Incoming invoice data
+     * @return array<string, mixed>
+     */
+    public static function createIncoming(array $params): array
+    {
+        return HttpClient::request('POST', self::BASE_PATH . '/incoming', $params);
+    }
+
+    /**
+     * List incoming invoices with cursor-based pagination.
+     *
+     * @param array<string, mixed> $params  Query parameters
+     * @return Collection
+     */
+    public static function listIncoming(array $params = []): Collection
+    {
+        $response = HttpClient::request('GET', self::BASE_PATH . '/incoming', null, $params);
+
+        return new Collection($response, $params, self::BASE_PATH . '/incoming');
+    }
 }

@@ -35,4 +35,36 @@ class Export
     {
         return HttpClient::request('POST', self::BASE_PATH . '/full');
     }
+
+    /**
+     * Get FEC export job status. Returns download_url when completed.
+     *
+     * @param string $jobId Job ID
+     * @return array<string, mixed>
+     */
+    public static function getFecStatus(string $jobId): array
+    {
+        return HttpClient::request('GET', self::BASE_PATH . '/fec/' . $jobId);
+    }
+
+    /**
+     * Get any export job status. Returns download_url when completed.
+     *
+     * @param string $jobId Job ID
+     * @return array<string, mixed>
+     */
+    public static function getExportStatus(string $jobId): array
+    {
+        return HttpClient::request('GET', self::BASE_PATH . '/' . $jobId);
+    }
+
+    /**
+     * Bulk export all finalized invoices as ZIP (Factur-X PDF + CII XML). All plans.
+     *
+     * @return array<string, mixed> Job object (202 Accepted)
+     */
+    public static function exportInvoices(): array
+    {
+        return HttpClient::request('POST', self::BASE_PATH . '/invoices');
+    }
 }

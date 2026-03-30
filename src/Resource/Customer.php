@@ -107,6 +107,6 @@ class Customer
      */
     public static function exportCsv(): array
     {
-        return HttpClient::request('POST', self::BASE_PATH . '/export');
+        return HttpClient::request('GET', self::BASE_PATH . '/export');
     }
 }

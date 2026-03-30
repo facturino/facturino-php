@@ -85,4 +85,69 @@ class Company
     {
         return HttpClient::request('DELETE', self::BASE_PATH . '/' . $id . '/cgv');
     }
+
+    /**
+     * Connect a PA — the client provides their own PA account credentials (BYOPA).
+     *
+     * @param string               $id      Company ID
+     * @param array<string, mixed> $params  provider, clientId, clientSecret, apiKey, customBaseUrl
+     * @return array<string, mixed>
+     */
+    public static function connectPA(string $id, array $params): array
+    {
+        return HttpClient::request('POST', self::BASE_PATH . '/' . $id . '/pa-connection', $params);
+    }
+
+    /**
+     * Disconnect the PA from a company.
+     *
+     * @param string $id Company ID
+     * @return array<string, mixed>
+     */
+    public static function disconnectPA(string $id): array
+    {
+        return HttpClient::request('DELETE', self::BASE_PATH . '/' . $id . '/pa-connection');
+    }
+
+    /**
+     * Test the PA connection (health check + credential validation).
+     *
+     * @param string $id Company ID
+     * @return array<string, mixed>
+     */
+    public static function testPAConnection(string $id): array
+    {
+        return HttpClient::request('POST', self::BASE_PATH . '/' . $id . '/pa-connection/test');
+    }
+
+    /**
+     * Connect a Stripe account for online payments (Pro+ only).
+     *
+     * @param array<string, mixed> $params  Stripe connection parameters
+     * @return array<string, mixed>
+     */
+    public static function connectStripe(array $params): array
+    {
+        return HttpClient::request('POST', '/v1/companies/stripe-connect', $params);
+    }
+
+    /**
+     * Get the Stripe dashboard URL for the connected account.
+     *
+     * @return array<string, mixed>
+     */
+    public static function getStripeDashboard(): array
+    {
+        return HttpClient::request('GET', '/v1/companies/stripe-dashboard');
+    }
+
+    /**
+     * Disconnect the Stripe account.
+     *
+     * @return array<string, mixed>
+     */
+    public static function disconnectStripe(): array
+    {
+        return HttpClient::request('DELETE', '/v1/companies/stripe-connect');
+    }
 }

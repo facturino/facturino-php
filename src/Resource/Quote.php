@@ -132,4 +132,15 @@ class Quote
     {
         return HttpClient::request('GET', self::BASE_PATH . '/' . $id . '/pdf');
     }
+
+    /**
+     * Get the signature proof for an accepted quote.
+     *
+     * @param string $id Quote ID
+     * @return array<string, mixed>
+     */
+    public static function getSignatureProof(string $id): array
+    {
+        return HttpClient::request('GET', self::BASE_PATH . '/' . $id . '/signature-proof');
+    }
 }

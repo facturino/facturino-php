@@ -110,4 +110,15 @@ class CreditNote
     {
         return HttpClient::request('GET', self::BASE_PATH . '/' . $id . '/pdf');
     }
+
+    /**
+     * Get the Factur-X PDF/A-3 for a credit note.
+     *
+     * @param string $id Credit note ID
+     * @return array<string, mixed>
+     */
+    public static function getFacturx(string $id): array
+    {
+        return HttpClient::request('GET', self::BASE_PATH . '/' . $id . '/facturx');
+    }
 }

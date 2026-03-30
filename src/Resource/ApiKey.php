@@ -68,4 +68,16 @@ class ApiKey
     {
         return HttpClient::request('DELETE', self::BASE_PATH . '/' . $id);
     }
+
+    /**
+     * Roll an API key. Generates a new secret while keeping the same ID.
+     * The new full key is only visible in the response.
+     *
+     * @param string $id Key ID
+     * @return array<string, mixed>
+     */
+    public static function roll(string $id): array
+    {
+        return HttpClient::request('POST', self::BASE_PATH . '/' . $id . '/roll');
+    }
 }

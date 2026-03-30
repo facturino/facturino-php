@@ -84,7 +84,7 @@ class RecurringInvoice
      * @param string $id Recurring invoice ID
      * @return array<string, mixed>
      */
-    public static function activate(string $id): array
+    public static function resume(string $id): array
     {
         return HttpClient::request('POST', self::BASE_PATH . '/' . $id . '/resume');
     }
@@ -95,7 +95,7 @@ class RecurringInvoice
      * @param string $id Recurring invoice ID
      * @return array<string, mixed>
      */
-    public static function deactivate(string $id): array
+    public static function pause(string $id): array
     {
         return HttpClient::request('POST', self::BASE_PATH . '/' . $id . '/pause');
     }

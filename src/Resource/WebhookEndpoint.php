@@ -77,4 +77,15 @@ class WebhookEndpoint
     {
         return HttpClient::request('DELETE', self::BASE_PATH . '/' . $id);
     }
+
+    /**
+     * Send a test event to a webhook endpoint.
+     *
+     * @param string $id Endpoint ID
+     * @return array<string, mixed>
+     */
+    public static function test(string $id): array
+    {
+        return HttpClient::request('POST', self::BASE_PATH . '/' . $id . '/test');
+    }
 }
