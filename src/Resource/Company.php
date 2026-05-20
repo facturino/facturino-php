@@ -28,6 +28,21 @@ class Company
     }
 
     /**
+     * Create a new company under the authenticated user.
+     *
+     * Subject to the per-plan company quota (free / essential: 1,
+     * pro: 3, cabinet_*: 50+); exceeding the quota returns a 402
+     * `plan_limit_error`.
+     *
+     * @param array<string, mixed> $params
+     * @return array<string, mixed>
+     */
+    public static function create(array $params): array
+    {
+        return HttpClient::request('POST', self::BASE_PATH, $params);
+    }
+
+    /**
      * Retrieve a company.
      *
      * @param string $id Company ID
@@ -48,6 +63,37 @@ class Company
     public static function update(string $id, array $params): array
     {
         return HttpClient::request('PATCH', self::BASE_PATH . '/' . $id, $params);
+    }
+
+    /**
+     * Update the invoicing settings (numbering format, default payment
+     * terms, default VAT rate, footer mentions…) and the VAT regime.
+     *
+     * @param array<string, mixed> $params
+     * @return array<string, mixed>
+     */
+    public static function updateInvoicingSettings(string $id, array $params): array
+    {
+        return HttpClient::request(
+            'PATCH',
+            self::BASE_PATH . '/' . $id . '/invoicing-settings',
+            $params,
+        );
+    }
+
+    /**
+     * Mark an onboarding milestone as reached (e.g.
+     * `first_invoice_sent`, `pa_connected`, `bank_added`).
+     *
+     * @return array<string, mixed>
+     */
+    public static function addMilestone(string $id, string $milestone): array
+    {
+        return HttpClient::request(
+            'POST',
+            self::BASE_PATH . '/' . $id . '/milestones',
+            ['milestone' => $milestone],
+        );
     }
 
     /**

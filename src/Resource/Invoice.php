@@ -289,6 +289,23 @@ class Invoice
     }
 
     /**
+     * Generate a signed client-portal link for a finalized invoice.
+     *
+     * The URL points to a public, branded portal where the customer
+     * can view the invoice, download the PDF and trigger the payment
+     * flow. The embedded token grants read-only access to a single
+     * invoice and expires after the configured lifetime. Returns
+     * `invalid_status_transition` if the invoice is still in draft.
+     *
+     * @param string $id Invoice ID
+     * @return array<string, mixed>
+     */
+    public static function createPortalLink(string $id): array
+    {
+        return HttpClient::request('POST', self::BASE_PATH . '/' . $id . '/portal-link');
+    }
+
+    /**
      * Create an incoming invoice (received from a supplier).
      *
      * @param array<string, mixed> $params  Incoming invoice data
