@@ -94,4 +94,16 @@ class Member
     {
         return HttpClient::request('DELETE', self::basePath($companyId) . '/' . $id);
     }
+
+    /**
+     * Re-send the invitation email to a pending member (owner/admin only).
+     *
+     * @param string $companyId Company ID
+     * @param string $id        Member ID
+     * @return array<string, mixed>
+     */
+    public static function resendInvitation(string $companyId, string $id): array
+    {
+        return HttpClient::request('POST', self::basePath($companyId) . '/' . $id . '/resend-invitation');
+    }
 }

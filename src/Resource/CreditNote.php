@@ -101,6 +101,19 @@ class CreditNote
     }
 
     /**
+     * Send the credit note to its customer by email with the PDF
+     * (and optionally the Factur-X XML).
+     *
+     * @param string $id Credit note ID
+     * @param array<string, mixed> $params Optional: recipientEmail, customMessage, includeXml, customSubject
+     * @return array<string, mixed>
+     */
+    public static function email(string $id, array $params = []): array
+    {
+        return HttpClient::request('POST', self::BASE_PATH . '/' . $id . '/email', $params);
+    }
+
+    /**
      * Get the PDF for a credit note.
      *
      * @param string $id Credit note ID

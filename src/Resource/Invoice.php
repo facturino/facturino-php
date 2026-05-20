@@ -106,7 +106,27 @@ class Invoice
     }
 
     /**
-     * Cancel an invoice. Note: not supported under French e-invoicing — use credit notes.
+     * Send a finalized invoice to its customer by email with the PDF
+     * (and optionally the Factur-X XML) attached.
+     *
+     * Returns ``{"status": "sent", ...}`` once dispatched, or
+     * ``{"status": "pending", "jobId": "job_..."}`` when the PDF is
+     * still being rendered. In the latter case poll the returned job
+     * and call ``email()`` again once the PDF is ready.
+     *
+     * @param string               $id     Invoice ID
+     * @param array<string, mixed> $params Optional: recipientEmail, customMessage, includeXml, customSubject
+     * @return array<string, mixed>
+     */
+    public static function email(string $id, array $params = []): array
+    {
+        return HttpClient::request('POST', self::BASE_PATH . '/' . $id . '/email', $params);
+    }
+
+    /**
+     * Cancel a draft invoice (status `draft` only). Finalized invoices
+     * are immutable under French law (CGI art. 289); to refund or
+     * correct one, issue a credit note via ``CreditNote::create()``.
      *
      * @param string $id Invoice ID
      * @return array<string, mixed>
@@ -117,14 +137,15 @@ class Invoice
     }
 
     /**
-     * Send a payment reminder for an invoice.
+     * Send a payment reminder email for an overdue invoice.
      *
-     * @param string $id Invoice ID
+     * @param string               $id     Invoice ID
+     * @param array<string, mixed> $params Optional: level (1, 2, 3), message
      * @return array<string, mixed>
      */
-    public static function remind(string $id): array
+    public static function remind(string $id, array $params = []): array
     {
-        return HttpClient::request('POST', self::BASE_PATH . '/' . $id . '/remind');
+        return HttpClient::request('POST', self::BASE_PATH . '/' . $id . '/remind', $params);
     }
 
     /**

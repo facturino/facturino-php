@@ -90,6 +90,18 @@ class Quote
     }
 
     /**
+     * Send the quote to its customer by email with the PDF attached.
+     *
+     * @param string $id Quote ID
+     * @param array<string, mixed> $params Optional: recipientEmail, customMessage, customSubject
+     * @return array<string, mixed>
+     */
+    public static function email(string $id, array $params = []): array
+    {
+        return HttpClient::request('POST', self::BASE_PATH . '/' . $id . '/email', $params);
+    }
+
+    /**
      * Accept a quote.
      *
      * @param string $id Quote ID
