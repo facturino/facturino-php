@@ -70,6 +70,10 @@ final class NewResourcesTest extends TestCase
                 'Validate',
                 ['run'],
             ],
+            'Health' => [
+                'Health',
+                ['retrieve'],
+            ],
         ];
     }
 
@@ -139,5 +143,105 @@ final class NewResourcesTest extends TestCase
     {
         $this->expectException(AuthenticationException::class);
         \Facturino\Validate::run(['kind' => 'siret', 'value' => '44306184100047']);
+    }
+
+    public function testHealthRetrieveRequiresApiKey(): void
+    {
+        $this->expectException(AuthenticationException::class);
+        \Facturino\Health::retrieve();
+    }
+
+    public function testBillingPauseRequiresApiKey(): void
+    {
+        $this->expectException(AuthenticationException::class);
+        \Facturino\Billing::pause(['months' => 2]);
+    }
+
+    /**
+     * Invoke a private static method on the Billing resource for white-box
+     * assertions on the wire payload it builds.
+     *
+     * @param array<string, mixed> $params
+     * @return array<string, mixed>
+     */
+    private static function invokeBillingNormalizer(string $method, array $params): array
+    {
+        $ref = new \ReflectionMethod(\Facturino\Resource\Billing::class, $method);
+        $ref->setAccessible(true);
+
+        /** @var array<string, mixed> $result */
+        $result = $ref->invoke(null, $params);
+
+        return $result;
+    }
+
+    public function testCheckoutWirePayloadOnlyContainsPlanIdAndUrls(): void
+    {
+        $wire = self::invokeBillingNormalizer('normalizeCheckoutParams', [
+            'plan' => 'pro',
+            'cycle' => 'annual',
+            'cancelAtPeriodEnd' => true,
+            'successUrl' => 'https://app/ok',
+            'cancelUrl' => 'https://app/ko',
+        ]);
+
+        $this->assertSame('pro', $wire['planId']);
+        $this->assertSame('https://app/ok', $wire['successUrl']);
+        $this->assertSame('https://app/ko', $wire['cancelUrl']);
+        $this->assertArrayNotHasKey('plan', $wire);
+        $this->assertArrayNotHasKey('cycle', $wire);
+        $this->assertArrayNotHasKey('annual', $wire);
+        $this->assertArrayNotHasKey('cancelAtPeriodEnd', $wire);
+    }
+
+    public function testCheckoutKeepsExplicitPlanId(): void
+    {
+        $wire = self::invokeBillingNormalizer('normalizeCheckoutParams', [
+            'planId' => 'cabinet_50',
+            'successUrl' => 'https://app/ok',
+            'cancelUrl' => 'https://app/ko',
+        ]);
+
+        $this->assertSame('cabinet_50', $wire['planId']);
+        $this->assertArrayNotHasKey('plan', $wire);
+    }
+
+    public function testUpdateSubscriptionMapsPlanAndCycleToWire(): void
+    {
+        $wire = self::invokeBillingNormalizer('normalizeSubscriptionParams', [
+            'plan' => 'pro',
+            'cycle' => 'annual',
+            'cancelAtPeriodEnd' => true,
+        ]);
+
+        $this->assertSame('pro', $wire['planId']);
+        $this->assertTrue($wire['annual']);
+        $this->assertArrayNotHasKey('plan', $wire);
+        $this->assertArrayNotHasKey('cycle', $wire);
+        $this->assertArrayNotHasKey('cancelAtPeriodEnd', $wire);
+    }
+
+    public function testUpdateSubscriptionMonthlyCycleBecomesAnnualFalse(): void
+    {
+        $wire = self::invokeBillingNormalizer('normalizeSubscriptionParams', [
+            'planId' => 'essential',
+            'cycle' => 'monthly',
+        ]);
+
+        $this->assertSame('essential', $wire['planId']);
+        $this->assertFalse($wire['annual']);
+        $this->assertArrayNotHasKey('cycle', $wire);
+    }
+
+    public function testUpdateSubscriptionRespectsExplicitAnnualBool(): void
+    {
+        $wire = self::invokeBillingNormalizer('normalizeSubscriptionParams', [
+            'planId' => 'pro',
+            'annual' => true,
+        ]);
+
+        $this->assertSame('pro', $wire['planId']);
+        $this->assertTrue($wire['annual']);
+        $this->assertArrayNotHasKey('cycle', $wire);
     }
 }

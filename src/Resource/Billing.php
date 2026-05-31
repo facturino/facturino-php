@@ -29,26 +29,38 @@ class Billing
     }
 
     /**
-     * Update the active subscription — change plan, cycle, or
-     * schedule a cancel-at-period-end.
+     * Update the active subscription — change plan and/or billing cycle.
      *
-     * @param array<string, mixed> $params  plan, cycle, cancelAtPeriodEnd
+     * Accepts the ergonomic `cycle` ('monthly'|'annual') and `plan` aliases,
+     * but the wire payload only ever contains `planId` (required) and the
+     * optional boolean `annual`. Cancelling at period end is handled through
+     * the Stripe Customer Portal, not this endpoint.
+     *
+     * @param array<string, mixed> $params  planId (or plan, required), annual (or cycle, optional)
      * @return array<string, mixed>
      */
     public static function updateSubscription(array $params): array
     {
-        return HttpClient::request('PATCH', self::BASE_PATH . '/subscription', $params);
+        return HttpClient::request(
+            'PATCH',
+            self::BASE_PATH . '/subscription',
+            self::normalizeSubscriptionParams($params),
+        );
     }
 
     /**
      * Create a Stripe Checkout session for the first paid subscription.
      *
-     * @param array<string, mixed> $params  plan, cycle, successUrl, cancelUrl
+     * @param array<string, mixed> $params  planId (or plan, required), successUrl (required), cancelUrl (required)
      * @return array<string, mixed>
      */
     public static function checkout(array $params): array
     {
-        return HttpClient::request('POST', self::BASE_PATH . '/checkout', $params);
+        return HttpClient::request(
+            'POST',
+            self::BASE_PATH . '/checkout',
+            self::normalizeCheckoutParams($params),
+        );
     }
 
     /**
@@ -65,11 +77,12 @@ class Billing
     /**
      * Pause the active subscription (Pro+ plans).
      *
+     * @param array<string, mixed> $params  months (required, integer 1..3)
      * @return array<string, mixed>
      */
-    public static function pause(): array
+    public static function pause(array $params): array
     {
-        return HttpClient::request('POST', self::BASE_PATH . '/pause');
+        return HttpClient::request('POST', self::BASE_PATH . '/pause', $params);
     }
 
     /**
@@ -104,5 +117,51 @@ class Billing
     public static function getInvoicePdf(string $invoiceId): array
     {
         return HttpClient::request('GET', self::BASE_PATH . '/invoices/' . $invoiceId . '/pdf');
+    }
+
+    /**
+     * Normalize Checkout params to the wire shape accepted by
+     * POST /v1/billing/checkout: { planId, successUrl, cancelUrl }.
+     *
+     * The endpoint is strict, so the `cycle`, `annual` and
+     * `cancelAtPeriodEnd` aliases are dropped and `plan` is renamed to
+     * `planId`.
+     *
+     * @param array<string, mixed> $params
+     * @return array<string, mixed>
+     */
+    private static function normalizeCheckoutParams(array $params): array
+    {
+        if (array_key_exists('plan', $params) && !array_key_exists('planId', $params)) {
+            $params['planId'] = $params['plan'];
+        }
+        unset($params['plan'], $params['cycle'], $params['annual'], $params['cancelAtPeriodEnd']);
+
+        return $params;
+    }
+
+    /**
+     * Normalize subscription-update params to the wire shape accepted by
+     * PATCH /v1/billing/subscription: { planId, annual? }.
+     *
+     * The endpoint is strict: `plan` is renamed to `planId`, the ergonomic
+     * `cycle` ('monthly'|'annual') is converted to the boolean `annual`, and
+     * `cancelAtPeriodEnd` is dropped (period-end cancellation is handled via
+     * the Stripe Customer Portal).
+     *
+     * @param array<string, mixed> $params
+     * @return array<string, mixed>
+     */
+    private static function normalizeSubscriptionParams(array $params): array
+    {
+        if (array_key_exists('plan', $params) && !array_key_exists('planId', $params)) {
+            $params['planId'] = $params['plan'];
+        }
+        if (array_key_exists('cycle', $params) && !array_key_exists('annual', $params)) {
+            $params['annual'] = ($params['cycle'] === 'annual');
+        }
+        unset($params['plan'], $params['cycle'], $params['cancelAtPeriodEnd']);
+
+        return $params;
     }
 }
