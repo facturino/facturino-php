@@ -135,6 +135,17 @@ class Quote
     }
 
     /**
+     * Clone a quote as a new draft.
+     *
+     * @param string $id Source quote ID
+     * @return array<string, mixed> The new draft quote
+     */
+    public static function clone(string $id): array
+    {
+        return HttpClient::request('POST', self::BASE_PATH . '/' . $id . '/clone');
+    }
+
+    /**
      * Get the PDF for a quote.
      *
      * @param string $id Quote ID

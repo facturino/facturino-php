@@ -34,7 +34,10 @@ class Product
     /**
      * List products with cursor-based pagination.
      *
-     * @param array<string, mixed> $params  Query parameters
+     * Optional filters: `q` (name prefix search), `category` (string)
+     * and `active` (bool).
+     *
+     * @param array<string, mixed> $params  Query parameters (limit, starting_after, ending_before, q, category, active)
      * @return Collection
      */
     public static function all(array $params = []): Collection

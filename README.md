@@ -102,6 +102,69 @@ $hasMore = $collection->hasMore();
 | Job | `\Facturino\Job` | `/v1/jobs` |
 | Sandbox | `\Facturino\Sandbox` | `/v1/sandbox` |
 
+## Quotes
+
+```php
+// Clone a quote as a new draft (mirrors Invoice::clone)
+$draft = \Facturino\Quote::clone('quo_xxx');
+
+// Convert an accepted quote to a draft invoice
+$invoice = \Facturino\Quote::convert('quo_xxx');
+```
+
+## Filtering and expanding
+
+The list and retrieve endpoints accept extra query parameters that pass
+straight through to the API:
+
+```php
+// Invoices issued from a given quote
+$invoices = \Facturino\Invoice::all(['convertedFrom' => 'quo_xxx']);
+
+// Inline related resources on a single invoice. `expand` is
+// comma-separated and accepts `customer`, `items.product` and
+// `credit_notes`. With `credit_notes` the response gains
+// `expanded.credit_notes` (array) and `expanded.net_balance` (string).
+$invoice = \Facturino\Invoice::retrieve('inv_xxx', [
+    'expand' => 'customer,credit_notes',
+]);
+
+// Product filters: q (name prefix), category, active
+$products = \Facturino\Product::all([
+    'q' => 'consult',
+    'category' => 'services',
+    'active' => true,
+]);
+```
+
+## Contacts and roles
+
+Each entry of a customer's `contacts[]` may carry a `role` of `billing`,
+`technical` or `main`. The `billing` contact receives invoices by default.
+
+```php
+\Facturino\Customer::create([
+    'name' => 'ACME Corp',
+    'type' => 'company',
+    'contacts' => [
+        ['name' => 'Compta', 'email' => 'compta@acme.com', 'role' => 'billing'],
+        ['name' => 'IT', 'email' => 'it@acme.com', 'role' => 'technical'],
+    ],
+]);
+```
+
+## Credit note numbering
+
+`creditNoteSettings.numberingMode` controls how credit notes are
+numbered: `separate` (default — their own number series) or `unified`
+(credit notes share the invoice number series).
+
+```php
+\Facturino\Company::update('comp_xxx', [
+    'creditNoteSettings' => ['numberingMode' => 'unified'],
+]);
+```
+
 ## Webhook verification
 
 Verify incoming webhooks using HMAC-SHA256 with timing-safe comparison:

@@ -56,6 +56,10 @@ class Company
     /**
      * Update a company.
      *
+     * `creditNoteSettings.numberingMode` accepts `separate` (default —
+     * credit notes use their own number series) or `unified` (credit
+     * notes share the invoice number series).
+     *
      * @param string               $id      Company ID
      * @param array<string, mixed> $params  Fields to update
      * @return array<string, mixed>
@@ -156,7 +160,14 @@ class Company
     }
 
     /**
-     * Test the PA connection (health check + credential validation).
+     * Test the PA connection: checks network reachability + credentials via a
+     * directory lookup of the company SIRET.
+     *
+     * Returns healthy, latencyMs, details, provider, testedAt and — when
+     * healthy is false — an errorCode: pa_credentials_invalid (fix
+     * credentials), pa_unreachable (PA/network outage), pa_not_supported (the
+     * PA has no directory lookup, a capability gap not a misconfiguration) or
+     * pa_error.
      *
      * @param string $id Company ID
      * @return array<string, mixed>

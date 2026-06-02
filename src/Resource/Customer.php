@@ -17,6 +17,10 @@ class Customer
     /**
      * Create a customer.
      *
+     * Each entry of `contacts[]` may carry a `role` of `billing`,
+     * `technical` or `main`. The `billing` contact receives invoices
+     * by default.
+     *
      * @param array<string, mixed> $params          Customer data
      * @param string|null          $idempotencyKey  Idempotency key
      * @return array<string, mixed>
@@ -57,6 +61,10 @@ class Customer
 
     /**
      * Update a customer.
+     *
+     * Each entry of `contacts[]` may carry a `role` of `billing`,
+     * `technical` or `main`. The `billing` contact receives invoices
+     * by default.
      *
      * @param string               $id      Customer ID
      * @param array<string, mixed> $params  Fields to update

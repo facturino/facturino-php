@@ -37,7 +37,10 @@ class Invoice
     /**
      * List invoices with cursor-based pagination.
      *
-     * @param array<string, mixed> $params  Query parameters (limit, starting_after, ending_before, status)
+     * Pass `convertedFrom` (a `quo_` quote ID) to return only the
+     * invoices issued from that quote.
+     *
+     * @param array<string, mixed> $params  Query parameters (limit, starting_after, ending_before, status, convertedFrom)
      * @return Collection
      */
     public static function all(array $params = []): Collection
@@ -50,12 +53,18 @@ class Invoice
     /**
      * Retrieve a single invoice.
      *
-     * @param string $id Invoice ID (inv_xxx)
+     * Pass `expand` (comma-separated) to inline related resources:
+     * `customer`, `items.product` and `credit_notes`. With
+     * `expand=credit_notes` the response gains `expanded.credit_notes`
+     * (array of credit notes) and `expanded.net_balance` (string).
+     *
+     * @param string               $id      Invoice ID (inv_xxx)
+     * @param array<string, mixed> $params  Query parameters (e.g., expand)
      * @return array<string, mixed>
      */
-    public static function retrieve(string $id): array
+    public static function retrieve(string $id, array $params = []): array
     {
-        return HttpClient::request('GET', self::BASE_PATH . '/' . $id);
+        return HttpClient::request('GET', self::BASE_PATH . '/' . $id, null, $params);
     }
 
     /**
