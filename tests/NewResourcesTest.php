@@ -10,7 +10,7 @@ use PHPUnit\Framework\TestCase;
 
 /**
  * Smoke tests for the resources added to reach 100% API coverage:
- * Billing, Cabinet, Notification, Reference, Setting, Usage, Validate.
+ * Billing, Reference, Usage, Validate, Health.
  *
  * Network access is gated by the lazy curl call so the unit tests
  * only assert that:
@@ -42,25 +42,11 @@ final class NewResourcesTest extends TestCase
         return [
             'Billing' => [
                 'Billing',
-                ['retrieveSubscription', 'updateSubscription', 'checkout', 'portal',
-                 'pause', 'resume', 'listInvoices', 'getInvoicePdf'],
-            ],
-            'Cabinet' => [
-                'Cabinet',
-                ['all', 'retrieve', 'create', 'updateBranding', 'dashboard',
-                 'activity', 'billingSplit', 'listCompanies', 'addCompany', 'inviteMember'],
-            ],
-            'Notification' => [
-                'Notification',
-                ['all', 'markRead', 'markAllRead', 'retrievePreferences', 'updatePreferences'],
+                ['retrieveSubscription', 'listInvoices', 'getInvoicePdf'],
             ],
             'Reference' => [
                 'Reference',
                 ['listLegalForms', 'listNafCodes'],
-            ],
-            'Setting' => [
-                'Setting',
-                ['retrieveAccounting', 'updateAccounting', 'retrieveReminders', 'updateReminders'],
             ],
             'Usage' => [
                 'Usage',
@@ -109,28 +95,10 @@ final class NewResourcesTest extends TestCase
         \Facturino\Billing::retrieveSubscription();
     }
 
-    public function testCabinetCreateRequiresApiKey(): void
-    {
-        $this->expectException(AuthenticationException::class);
-        \Facturino\Cabinet::create(['name' => 'Cab', 'plan' => 'cabinet_50']);
-    }
-
-    public function testNotificationRetrievePreferencesRequiresApiKey(): void
-    {
-        $this->expectException(AuthenticationException::class);
-        \Facturino\Notification::retrievePreferences();
-    }
-
     public function testReferenceListLegalFormsRequiresApiKey(): void
     {
         $this->expectException(AuthenticationException::class);
         \Facturino\Reference::listLegalForms(['search' => 'SAS']);
-    }
-
-    public function testSettingRetrieveAccountingRequiresApiKey(): void
-    {
-        $this->expectException(AuthenticationException::class);
-        \Facturino\Setting::retrieveAccounting('comp_x');
     }
 
     public function testUsageRetrieveRequiresApiKey(): void
@@ -151,97 +119,4 @@ final class NewResourcesTest extends TestCase
         \Facturino\Health::retrieve();
     }
 
-    public function testBillingPauseRequiresApiKey(): void
-    {
-        $this->expectException(AuthenticationException::class);
-        \Facturino\Billing::pause(['months' => 2]);
-    }
-
-    /**
-     * Invoke a private static method on the Billing resource for white-box
-     * assertions on the wire payload it builds.
-     *
-     * @param array<string, mixed> $params
-     * @return array<string, mixed>
-     */
-    private static function invokeBillingNormalizer(string $method, array $params): array
-    {
-        $ref = new \ReflectionMethod(\Facturino\Resource\Billing::class, $method);
-        $ref->setAccessible(true);
-
-        /** @var array<string, mixed> $result */
-        $result = $ref->invoke(null, $params);
-
-        return $result;
-    }
-
-    public function testCheckoutWirePayloadOnlyContainsPlanIdAndUrls(): void
-    {
-        $wire = self::invokeBillingNormalizer('normalizeCheckoutParams', [
-            'plan' => 'pro',
-            'cycle' => 'annual',
-            'cancelAtPeriodEnd' => true,
-            'successUrl' => 'https://app/ok',
-            'cancelUrl' => 'https://app/ko',
-        ]);
-
-        $this->assertSame('pro', $wire['planId']);
-        $this->assertSame('https://app/ok', $wire['successUrl']);
-        $this->assertSame('https://app/ko', $wire['cancelUrl']);
-        $this->assertArrayNotHasKey('plan', $wire);
-        $this->assertArrayNotHasKey('cycle', $wire);
-        $this->assertArrayNotHasKey('annual', $wire);
-        $this->assertArrayNotHasKey('cancelAtPeriodEnd', $wire);
-    }
-
-    public function testCheckoutKeepsExplicitPlanId(): void
-    {
-        $wire = self::invokeBillingNormalizer('normalizeCheckoutParams', [
-            'planId' => 'cabinet_50',
-            'successUrl' => 'https://app/ok',
-            'cancelUrl' => 'https://app/ko',
-        ]);
-
-        $this->assertSame('cabinet_50', $wire['planId']);
-        $this->assertArrayNotHasKey('plan', $wire);
-    }
-
-    public function testUpdateSubscriptionMapsPlanAndCycleToWire(): void
-    {
-        $wire = self::invokeBillingNormalizer('normalizeSubscriptionParams', [
-            'plan' => 'pro',
-            'cycle' => 'annual',
-            'cancelAtPeriodEnd' => true,
-        ]);
-
-        $this->assertSame('pro', $wire['planId']);
-        $this->assertTrue($wire['annual']);
-        $this->assertArrayNotHasKey('plan', $wire);
-        $this->assertArrayNotHasKey('cycle', $wire);
-        $this->assertArrayNotHasKey('cancelAtPeriodEnd', $wire);
-    }
-
-    public function testUpdateSubscriptionMonthlyCycleBecomesAnnualFalse(): void
-    {
-        $wire = self::invokeBillingNormalizer('normalizeSubscriptionParams', [
-            'planId' => 'essential',
-            'cycle' => 'monthly',
-        ]);
-
-        $this->assertSame('essential', $wire['planId']);
-        $this->assertFalse($wire['annual']);
-        $this->assertArrayNotHasKey('cycle', $wire);
-    }
-
-    public function testUpdateSubscriptionRespectsExplicitAnnualBool(): void
-    {
-        $wire = self::invokeBillingNormalizer('normalizeSubscriptionParams', [
-            'planId' => 'pro',
-            'annual' => true,
-        ]);
-
-        $this->assertSame('pro', $wire['planId']);
-        $this->assertTrue($wire['annual']);
-        $this->assertArrayNotHasKey('cycle', $wire);
-    }
 }

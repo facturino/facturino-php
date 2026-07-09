@@ -56,6 +56,12 @@ final class HttpClient
         if ($queryParams !== null) {
             $filtered = array_filter($queryParams, fn ($v) => $v !== null);
             if (!empty($filtered)) {
+                // Serialize booleans as "true"/"false" rather than PHP's default
+                // "1"/"" so they match the API's string-typed query filters.
+                $filtered = array_map(
+                    static fn ($v) => is_bool($v) ? ($v ? 'true' : 'false') : $v,
+                    $filtered,
+                );
                 $url .= '?' . http_build_query($filtered);
             }
         }
@@ -64,6 +70,7 @@ final class HttpClient
             'Authorization: Bearer ' . $apiKey,
             'Content-Type: application/json',
             'User-Agent: facturino-php/' . Facturino::VERSION,
+            'Facturino-Version: ' . Facturino::API_VERSION,
             'Accept: application/json',
         ];
 
@@ -73,7 +80,10 @@ final class HttpClient
 
         $body = null;
         if ($params !== null && in_array($method, ['POST', 'PATCH', 'PUT'], true)) {
-            $body = json_encode($params, JSON_THROW_ON_ERROR);
+            // Empty params must serialize to a JSON object `{}`, not an array `[]`
+            // — the backend `schema.parse(req.body)` rejects an array ("Expected
+            // object, received array" → 422) for no-param POSTs (remind, exports…).
+            $body = json_encode($params === [] ? new \stdClass() : $params, JSON_THROW_ON_ERROR);
         }
 
         $attempt = 0;

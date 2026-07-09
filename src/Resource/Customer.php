@@ -98,23 +98,25 @@ class Customer
     }
 
     /**
-     * Import customers from CSV rows.
+     * Import customers from a CSV string (max 1000 rows).
      *
-     * @param array<string, mixed> $params  Import data (rows: array of customer objects)
-     * @return array<string, mixed> Job object
+     * @param string $csv  CSV content (header row + one customer per line).
+     * @return array<string, mixed> Job object (202 Accepted).
      */
-    public static function importCsv(array $params): array
+    public static function importCsv(string $csv): array
     {
-        return HttpClient::request('POST', self::BASE_PATH . '/import', $params);
+        /** @var array<string, mixed> */
+        return HttpClient::request('POST', self::BASE_PATH . '/import', ['csv' => $csv]);
     }
 
     /**
-     * Export customers as CSV (async job).
+     * Export the customer list as raw CSV (Content-Type text/csv).
      *
-     * @return array<string, mixed> Job object
+     * @return string CSV content.
      */
-    public static function exportCsv(): array
+    public static function exportCsv(): string
     {
-        return HttpClient::request('GET', self::BASE_PATH . '/export');
+        /** @var string */
+        return HttpClient::request('GET', self::BASE_PATH . '/export', null, null, [], true);
     }
 }

@@ -134,4 +134,25 @@ class CreditNote
     {
         return HttpClient::request('GET', self::BASE_PATH . '/' . $id . '/facturx');
     }
+
+    /**
+     * Get the raw CII or UBL XML for a credit note.
+     *
+     * @param string $id Credit note ID
+     * @param string $format "cii" (default) or "ubl"
+     * @return string Raw XML content
+     */
+    public static function getXml(string $id, string $format = 'cii'): string
+    {
+        $result = HttpClient::request(
+            'GET',
+            self::BASE_PATH . '/' . $id . '/xml',
+            null,
+            ['format' => $format],
+            [],
+            true,
+        );
+
+        return is_string($result) ? $result : '';
+    }
 }

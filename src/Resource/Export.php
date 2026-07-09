@@ -27,16 +27,6 @@ class Export
     }
 
     /**
-     * Generate a full RGPD data export (async job).
-     *
-     * @return array<string, mixed> Job object
-     */
-    public static function exportRgpd(): array
-    {
-        return HttpClient::request('POST', self::BASE_PATH . '/full');
-    }
-
-    /**
      * Get FEC export job status. Returns download_url when completed.
      *
      * @param string $jobId Job ID
@@ -59,12 +49,15 @@ class Export
     }
 
     /**
-     * Bulk export all finalized invoices as ZIP (Factur-X PDF + CII XML). All plans.
+     * Bulk export finalized invoices as ZIP (Factur-X PDF + CII XML). All plans.
      *
+     * With no params, every non-draft invoice is exported.
+     *
+     * @param array<string, mixed> $params  Optional filters (period_start, period_end, statuses)
      * @return array<string, mixed> Job object (202 Accepted)
      */
-    public static function exportInvoices(): array
+    public static function exportInvoices(array $params = []): array
     {
-        return HttpClient::request('POST', self::BASE_PATH . '/invoices');
+        return HttpClient::request('POST', self::BASE_PATH . '/invoices', $params);
     }
 }

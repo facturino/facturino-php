@@ -9,26 +9,23 @@ use Facturino\HttpClient;
 /**
  * Validate resource — /v1/validate
  *
- * Synchronous structural validation of business identifiers (SIRET,
- * VAT number, IBAN, BIC) and document payloads (invoice line items
- * against EN16931 / CIUS-FR Schematron rules). Useful client-side to
- * surface errors before hitting the write endpoints — Validate calls
- * never mutate any resource.
+ * Dry-run conformity check of an invoice draft against the same EN16931 /
+ * CIUS-FR rules as Invoice::create, without persisting anything. Use it to
+ * surface conformity warnings before creating an invoice. To check a
+ * customer's SIRET/VAT, use Customer::lookup (SIRENE/VIES).
  */
 class Validate
 {
     private const BASE_PATH = '/v1/validate';
 
     /**
-     * Run a single validation request.
+     * Validate an invoice payload without creating it.
      *
-     * The shape depends on `kind`:
-     *  - `siret` / `vat` / `iban` / `bic` accept a `value` string.
-     *  - `invoice` accepts a full invoice payload and runs Schematron
-     *    against EN16931 + CIUS-FR.
+     * Accepts the same fields as Invoice::create (customerId, buyer, lines,
+     * dates, payment...).
      *
-     * @param array<string, mixed> $params
-     * @return array<string, mixed>
+     * @param array<string, mixed> $params  Invoice payload to validate.
+     * @return array<string, mixed>  ['valid' => bool, 'warnings' => [...], 'schemaVersion' => string]
      */
     public static function run(array $params): array
     {

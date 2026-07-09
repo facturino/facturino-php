@@ -42,22 +42,37 @@ $customer = \Facturino\Customer::create([
 
 // Create and finalize an invoice
 $invoice = \Facturino\Invoice::create([
-    'customer' => $customer['id'],
-    'items' => [[
+    'customerId' => $customer['id'],
+    'buyer' => [
+        'companyName' => 'Acme SAS',
+        'siret' => '55208131766522',
+        'address' => ['line1' => '10 rue de la Paix', 'postalCode' => '75002', 'city' => 'Paris', 'country' => 'FR'],
+    ],
+    'lines' => [[
         'description' => 'Consulting',
-        'quantity' => 1,
-        'unit_price' => 10000,  // 100.00 EUR in centimes
-        'vat_rate' => 2000,     // 20.00% in centipercent
+        'quantity' => '1',       // decimal string
+        'unit' => 'flat_rate',
+        'unitPrice' => 10000,    // 100.00 EUR in centimes
+        'vatRate' => 2000,       // 20.00% in centipercent
+        'vatCode' => 'S',
     ]],
     'dates' => [
         'issued' => '2026-01-15',
         'due' => '2026-02-15',
+    ],
+    'payment' => [
+        'terms' => 'Paiement à 30 jours', 'termsDays' => 30, 'method' => 'transfer',
+        'latePaymentRate' => '10.00', 'collectionFee' => '40.00',
     ],
 ]);
 $invoice = \Facturino\Invoice::finalize($invoice['id']);
 
 // Send to PA (Plateforme Agreee)
 \Facturino\Invoice::send($invoice['id']);
+
+// One-shot alternative — finalize (and optionally deliver) in the create call:
+//   \Facturino\Invoice::create([..., 'autoFinalize' => true,
+//       'autoSend' => ['email' => true, 'pa' => true]]);
 
 // Record a payment
 \Facturino\Payment::create($invoice['id'], [
@@ -95,8 +110,6 @@ $hasMore = $collection->hasMore();
 | Webhook Endpoint | `\Facturino\WebhookEndpoint` | `/v1/webhook-endpoints` |
 | Recurring Invoice | `\Facturino\RecurringInvoice` | `/v1/recurring-invoices` |
 | Company | `\Facturino\Company` | `/v1/companies` |
-| Member | `\Facturino\Member` | `/v1/members` |
-| API Key | `\Facturino\ApiKey` | `/v1/api-keys` |
 | Export | `\Facturino\Export` | `/v1/exports` |
 | E-reporting | `\Facturino\Ereporting` | `/v1/ereporting/declarations` |
 | Job | `\Facturino\Job` | `/v1/jobs` |
@@ -201,7 +214,7 @@ Pass an idempotency key on POST requests to safely retry:
 
 ```php
 $invoice = \Facturino\Invoice::create(
-    ['customer' => 'cus_xxx', 'items' => [...]],
+    ['customerId' => 'cus_xxx', 'buyer' => [...], 'lines' => [...], 'dates' => [...], 'payment' => [...]],
     'idem_unique_request_id_123'
 );
 ```
@@ -245,9 +258,11 @@ The API uses integers to avoid floating-point precision issues:
 // 150.00 EUR HT with 20% VAT
 $item = [
     'description' => 'Service',
-    'quantity' => 1,
-    'unit_price' => 15000,  // 150.00 EUR
-    'vat_rate' => 2000,     // 20.00%
+    'quantity' => '1',
+    'unit' => 'flat_rate',
+    'unitPrice' => 15000,   // 150.00 EUR
+    'vatRate' => 2000,      // 20.00%
+    'vatCode' => 'S',
 ];
 ```
 
@@ -270,7 +285,7 @@ if (isset($result['url'])) {
     } while ($job['status'] === 'pending');
 
     if ($job['status'] === 'completed') {
-        $pdfUrl = $job['download_url'];
+        $pdfUrl = $job['url'];
     }
 }
 ```

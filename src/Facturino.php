@@ -14,6 +14,7 @@ namespace Facturino;
 final class Facturino
 {
     public const VERSION = '1.0.0';
+    public const API_VERSION = '2026-03-01';
     public const API_BASE = 'https://facturino.com/api';
 
     private static ?string $apiKey = null;

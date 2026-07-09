@@ -12,9 +12,8 @@ use PHPUnit\Framework\TestCase;
  * Smoke tests for the methods backfilled on existing resources to
  * reach actual 100% API coverage:
  *
- *  - Account: scheduleDeletion, cancelDeletion, requestExport,
- *    downloadExport, updateNotifications
- *  - Company: create, updateInvoicingSettings, addMilestone
+ *  - Account: requestExport, downloadExport
+ *  - Company: create, addMilestone
  *  - Invoice: createPortalLink
  */
 final class MissingMethodsTest extends TestCase
@@ -35,13 +34,9 @@ final class MissingMethodsTest extends TestCase
     public static function methodProvider(): array
     {
         return [
-            'Account::scheduleDeletion'        => [\Facturino\Account::class, 'scheduleDeletion'],
-            'Account::cancelDeletion'          => [\Facturino\Account::class, 'cancelDeletion'],
             'Account::requestExport'           => [\Facturino\Account::class, 'requestExport'],
             'Account::downloadExport'          => [\Facturino\Account::class, 'downloadExport'],
-            'Account::updateNotifications'     => [\Facturino\Account::class, 'updateNotifications'],
             'Company::create'                  => [\Facturino\Company::class, 'create'],
-            'Company::updateInvoicingSettings' => [\Facturino\Company::class, 'updateInvoicingSettings'],
             'Company::addMilestone'            => [\Facturino\Company::class, 'addMilestone'],
             'Invoice::createPortalLink'        => [\Facturino\Invoice::class, 'createPortalLink'],
         ];
@@ -56,12 +51,6 @@ final class MissingMethodsTest extends TestCase
             method_exists($class, $method),
             "{$class}::{$method}() must be exposed",
         );
-    }
-
-    public function testAccountScheduleDeletionRequiresApiKey(): void
-    {
-        $this->expectException(AuthenticationException::class);
-        \Facturino\Account::scheduleDeletion();
     }
 
     public function testAccountDownloadExportRequiresApiKey(): void

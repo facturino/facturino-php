@@ -315,10 +315,11 @@ class Invoice
     }
 
     /**
-     * Create an incoming invoice (received from a supplier).
+     * Record a supplier invoice received outside the platform.
      *
-     * @param array<string, mixed> $params  Incoming invoice data
-     * @return array<string, mixed>
+     * @param array<string, mixed> $params  ['senderName' => string, 'senderSiret' => ?string,
+     *                                       'amount' => int (cents), 'reference' => ?string]
+     * @return array<string, mixed>  The recorded received invoice (rec_ id).
      */
     public static function createIncoming(array $params): array
     {
