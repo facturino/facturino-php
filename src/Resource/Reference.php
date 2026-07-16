@@ -50,4 +50,18 @@ class Reference
 
         return new Collection($response, $params, $path);
     }
+
+    /**
+     * List the supported Plateformes Agréées (PA).
+     *
+     * Public catalogue — no filter; fetch once and cache. Use it to render a
+     * provider picker and the credential fields each PA requires (Facturino is
+     * BYOPA: the customer brings their own PA credentials at connect time).
+     *
+     * @return array<string, mixed>  { object: 'list', data: PaProvider[] }
+     */
+    public static function listPaProviders(): array
+    {
+        return HttpClient::request('GET', '/v1/pa-providers');
+    }
 }

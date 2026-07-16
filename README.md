@@ -114,6 +114,13 @@ $hasMore = $collection->hasMore();
 | E-reporting | `\Facturino\Ereporting` | `/v1/ereporting/declarations` |
 | Job | `\Facturino\Job` | `/v1/jobs` |
 | Sandbox | `\Facturino\Sandbox` | `/v1/sandbox` |
+| Reference | `\Facturino\Reference` | `/v1/reference`, `/v1/pa-providers` |
+| Health | `\Facturino\Health` | `/v1/health` |
+
+> **Public token endpoints** — the recipient-facing portals (`/pay/:token`,
+> `/portal/:token`, `/quote-portal/:token`) are intentionally not exposed by the
+> SDK: they are opened by the end recipient through a hosted page, not called
+> with an API key.
 
 ## Quotes
 
