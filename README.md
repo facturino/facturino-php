@@ -31,7 +31,7 @@ $customer = \Facturino\Customer::create([
     'name' => 'ACME Corp',
     'type' => 'company',
     'email' => 'billing@acme.com',
-    'siret' => '12345678901234',
+    'siret' => '73282932000074',
     'address' => [
         'line1' => '42 rue des Acacias',
         'postalCode' => '75001',
@@ -55,6 +55,7 @@ $invoice = \Facturino\Invoice::create([
         'unitPrice' => 10000,    // 100.00 EUR in centimes
         'vatRate' => 2000,       // 20.00% in centipercent
         'vatCode' => 'S',
+        // 'vatexCode' => 'VATEX-FR-261', // optional: specific exemption code (BT-121)
     ]],
     'dates' => [
         'issued' => '2026-01-15',
@@ -75,11 +76,14 @@ $invoice = \Facturino\Invoice::finalize($invoice['id']);
 //       'autoSend' => ['email' => true, 'pa' => true]]);
 
 // Record a payment
-\Facturino\Payment::create($invoice['id'], [
+$payment = \Facturino\Payment::create($invoice['id'], [
     'amount' => 12000,    // 120.00 EUR (100 HT + 20 TVA)
     'method' => 'transfer',
     'paidAt' => '2026-02-10',
 ]);
+
+// Cancel a payment (kept as "cancelled" for the audit trail)
+\Facturino\Payment::cancel($invoice['id'], $payment['id']);
 ```
 
 ## Auto-pagination

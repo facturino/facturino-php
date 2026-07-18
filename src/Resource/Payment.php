@@ -53,4 +53,23 @@ class Payment
 
         return new Collection($response, $params, $path);
     }
+
+    /**
+     * Cancel a recorded payment.
+     *
+     * The payment is kept for the audit trail (status "cancelled") and the
+     * invoice is re-settled from the reversal. Rejected once the payment has
+     * been reported to the tax authority.
+     *
+     * @param string $invoiceId  Invoice ID (inv_xxx)
+     * @param string $paymentId  Payment ID (pay_xxx)
+     * @return array<string, mixed>
+     */
+    public static function cancel(string $invoiceId, string $paymentId): array
+    {
+        return HttpClient::request(
+            'POST',
+            '/v1/invoices/' . $invoiceId . '/payments/' . $paymentId . '/cancel',
+        );
+    }
 }

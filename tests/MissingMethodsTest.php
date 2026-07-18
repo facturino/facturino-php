@@ -39,6 +39,7 @@ final class MissingMethodsTest extends TestCase
             'Company::create'                  => [\Facturino\Company::class, 'create'],
             'Company::addMilestone'            => [\Facturino\Company::class, 'addMilestone'],
             'Invoice::createPortalLink'        => [\Facturino\Invoice::class, 'createPortalLink'],
+            'Payment::cancel'                  => [\Facturino\Payment::class, 'cancel'],
         ];
     }
 
@@ -85,5 +86,11 @@ final class MissingMethodsTest extends TestCase
     {
         $this->expectException(AuthenticationException::class);
         \Facturino\Invoice::createPortalLink('inv_x');
+    }
+
+    public function testPaymentCancelRequiresApiKey(): void
+    {
+        $this->expectException(AuthenticationException::class);
+        \Facturino\Payment::cancel('inv_x', 'pay_x');
     }
 }
