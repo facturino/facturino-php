@@ -114,6 +114,26 @@ class CreditNote
     }
 
     /**
+     * Record the disbursement of a finalized credit note back to the customer.
+     * Writes a negative `refund` payment on the linked invoice. Returns
+     * { id, object: 'refund', creditNoteId, invoiceId, amount }.
+     *
+     * @param string $id Credit note ID
+     * @param array<string, mixed> $params Optional: amount (integer centimes), method, refundedAt
+     * @param string|null $idempotencyKey Idempotency key
+     * @return array<string, mixed>
+     */
+    public static function refund(string $id, array $params = [], ?string $idempotencyKey = null): array
+    {
+        $headers = [];
+        if ($idempotencyKey !== null) {
+            $headers['Idempotency-Key'] = $idempotencyKey;
+        }
+
+        return HttpClient::request('POST', self::BASE_PATH . '/' . $id . '/refund', $params, null, $headers);
+    }
+
+    /**
      * Get the PDF for a credit note.
      *
      * @param string $id Credit note ID

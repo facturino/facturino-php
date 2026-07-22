@@ -40,6 +40,7 @@ final class MissingMethodsTest extends TestCase
             'Company::addMilestone'            => [\Facturino\Company::class, 'addMilestone'],
             'Invoice::createPortalLink'        => [\Facturino\Invoice::class, 'createPortalLink'],
             'Payment::cancel'                  => [\Facturino\Payment::class, 'cancel'],
+            'CreditNote::refund'               => [\Facturino\CreditNote::class, 'refund'],
         ];
     }
 
@@ -92,5 +93,11 @@ final class MissingMethodsTest extends TestCase
     {
         $this->expectException(AuthenticationException::class);
         \Facturino\Payment::cancel('inv_x', 'pay_x');
+    }
+
+    public function testCreditNoteRefundRequiresApiKey(): void
+    {
+        $this->expectException(AuthenticationException::class);
+        \Facturino\CreditNote::refund('crn_x', ['amount' => 12000, 'method' => 'transfer']);
     }
 }
