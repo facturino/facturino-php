@@ -43,7 +43,7 @@ class Payment
      * List payments for an invoice.
      *
      * @param string               $invoiceId  Invoice ID
-     * @param array<string, mixed> $params     Query parameters (limit, starting_after, ending_before)
+     * @param array<string, mixed> $params     Query parameters (limit, starting_after)
      * @return Collection
      */
     public static function all(string $invoiceId, array $params = []): Collection

@@ -40,7 +40,7 @@ class Invoice
      * Pass `convertedFrom` (a `quo_` quote ID) to return only the
      * invoices issued from that quote.
      *
-     * @param array<string, mixed> $params  Query parameters (limit, starting_after, ending_before, status, convertedFrom)
+     * @param array<string, mixed> $params  Query parameters (limit, starting_after, status, convertedFrom)
      * @return Collection
      */
     public static function all(array $params = []): Collection

@@ -19,7 +19,7 @@ class ReceivedInvoice
     /**
      * List received invoices with cursor-based pagination.
      *
-     * @param array<string, mixed> $params  Query parameters (limit, starting_after, ending_before, status)
+     * @param array<string, mixed> $params  Query parameters (limit, starting_after, status)
      * @return Collection
      */
     public static function all(array $params = []): Collection

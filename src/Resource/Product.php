@@ -37,7 +37,7 @@ class Product
      * Optional filters: `q` (name prefix search), `category` (string)
      * and `active` (bool).
      *
-     * @param array<string, mixed> $params  Query parameters (limit, starting_after, ending_before, q, category, active)
+     * @param array<string, mixed> $params  Query parameters (limit, starting_after, q, category, active)
      * @return Collection
      */
     public static function all(array $params = []): Collection

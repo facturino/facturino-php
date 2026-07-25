@@ -161,7 +161,8 @@ final class HttpClient
         $curlError = curl_error($ch);
         $curlErrno = curl_errno($ch);
 
-        curl_close($ch);
+        // curl_close() is a no-op since PHP 8.0 (CurlHandle is garbage
+        // collected) and deprecated since PHP 8.5.
 
         if ($curlErrno !== 0) {
             throw new ApiException(

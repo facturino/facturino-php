@@ -9,7 +9,7 @@ use Facturino\HttpClient;
 /**
  * Paginated list with auto-pagination support via Iterator.
  *
- * Uses cursor-based pagination (starting_after/ending_before).
+ * Uses cursor-based pagination (starting_after).
  * Automatically fetches subsequent pages when iterated.
  *
  * Usage:
