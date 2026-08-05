@@ -100,4 +100,12 @@ final class MissingMethodsTest extends TestCase
         $this->expectException(AuthenticationException::class);
         \Facturino\CreditNote::refund('crn_x', ['amount' => 12000, 'method' => 'transfer']);
     }
+
+    public function testRecordPaymentAcceptsPaypalMethod(): void
+    {
+        // Dynamic params: 'paypal' flows straight through to the HTTP layer,
+        // which raises the auth guard when no API key is configured.
+        $this->expectException(AuthenticationException::class);
+        \Facturino\Payment::create('inv_x', ['amount' => 10000, 'method' => 'paypal', 'paidAt' => '2026-03-15']);
+    }
 }
