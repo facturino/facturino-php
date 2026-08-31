@@ -6,6 +6,7 @@ namespace Facturino;
 
 use Facturino\Exception\ApiException;
 use Facturino\Exception\AuthenticationException;
+use Facturino\Exception\ConflictException;
 use Facturino\Exception\InvalidRequestException;
 use Facturino\Exception\RateLimitException;
 
@@ -235,6 +236,18 @@ final class HttpClient
         match (true) {
             $statusCode === 401 => throw new AuthenticationException($message, $statusCode, $requestId),
             $statusCode === 429 => throw new RateLimitException($message, $statusCode, $requestId),
+            // A conflict is distinguishable without reading the status code by
+            // hand — and stays an InvalidRequestException for existing callers.
+            $statusCode === 409 => throw new ConflictException(
+                $message,
+                $statusCode,
+                $type,
+                $code,
+                $param,
+                $docUrl,
+                $requestId,
+                $hint,
+            ),
             $statusCode >= 400 && $statusCode < 500 => throw new InvalidRequestException(
                 $message,
                 $statusCode,

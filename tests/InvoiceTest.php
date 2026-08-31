@@ -56,8 +56,9 @@ final class InvoiceTest extends TestCase
         $this->expectExceptionMessage('No API key provided');
 
         \Facturino\Invoice::create([
-            'customer' => 'cus_test123',
-            'items' => [['description' => 'Test', 'quantity' => 1, 'unit_price' => 10000, 'vat_rate' => 2000]],
+            'customerId' => 'cus_test123',
+            'taxDecisionId' => 'taxdec_test123',
+            'decisionLines' => [['taxLineRef' => 'l1', 'unit' => 'unit']],
         ]);
     }
 
@@ -84,8 +85,9 @@ final class InvoiceTest extends TestCase
         $this->expectExceptionMessage('Could not connect');
 
         \Facturino\Invoice::create([
-            'customer' => 'cus_test123',
-            'items' => [['description' => 'Test', 'quantity' => 1, 'unit_price' => 10000, 'vat_rate' => 2000]],
+            'customerId' => 'cus_test123',
+            'taxDecisionId' => 'taxdec_test123',
+            'decisionLines' => [['taxLineRef' => 'l1', 'unit' => 'unit']],
         ]);
     }
 

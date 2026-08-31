@@ -17,6 +17,22 @@ class RecurringInvoice
     /**
      * Create a recurring invoice schedule.
      *
+     * `taxInputs` (`taxSource`, `priceMode` plus commercial lines) is
+     * required: every occurrence is decided on ITS OWN generation date. A
+     * recurrence never stores a decision — one taken today would apply this
+     * quarter's rules to next year's invoice — so no `taxDecisionId` is ever
+     * reused. `templateInvoice` carries document-only template data (payment
+     * terms, notes); never VAT.
+     *
+     *   ['customerId' => 'cus_1', 'frequency' => 'monthly',
+     *    'taxInputs' => ['taxSource' => 'facturino',
+     *      'priceMode' => 'tax_exclusive', 'lines' => [[
+     *        'reference' => 'abo-pro', 'description' => 'Abonnement Pro',
+     *        'category' => 'electronically_supplied_services',
+     *        'rateCategory' => 'standard', 'unitAmount' => 2900,
+     *        'quantity' => '1', 'unit' => 'month']]],
+     *    'templateInvoice' => ['paymentTermsDays' => 30]]
+     *
      * @param array<string, mixed> $params          Schedule data
      * @param string|null          $idempotencyKey  Idempotency key
      * @return array<string, mixed>

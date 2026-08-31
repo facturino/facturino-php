@@ -18,7 +18,19 @@ class Invoice
     private const BASE_PATH = '/v1/invoices';
 
     /**
-     * Create a draft invoice.
+     * Create a draft invoice from an immutable tax decision.
+     *
+     * Every invoice references the decision that fixed its VAT and its
+     * amounts; the invoice never restates a rate, so `lines`/`items` are
+     * refused locally, before any HTTP call. A decision line carries
+     * presentation only (`taxLineRef`, `unit`, optional `product`).
+     *
+     *   ['customerId' => 'cus_1', 'taxDecisionId' => 'taxdec_9c1f',
+     *    'decisionLines' => [['taxLineRef' => 'abo-pro', 'unit' => 'month']],
+     *    'buyer' => $buyer, 'dates' => $dates, 'payment' => $payment]
+     *
+     * `deposits` and `schedule` travel alongside the decision: both are
+     * settled server-side against the DECIDED amount due.
      *
      * @param array<string, mixed>  $params           Invoice data
      * @param string|null           $idempotencyKey   Idempotency key for safe retries
@@ -26,6 +38,28 @@ class Invoice
      */
     public static function create(array $params, ?string $idempotencyKey = null): array
     {
+        foreach (['lines', 'items'] as $field) {
+            // PRESENCE of the key is refused — an empty array included: it
+            // states the intent to restate VAT on the invoice, which no
+            // contract allows.
+            if (array_key_exists($field, $params)) {
+                throw new \InvalidArgumentException(sprintf(
+                    "'%s' is not part of the invoice contract: an invoice never states its own VAT. Create a tax decision first, then reference it with 'taxDecisionId' and describe the document lines with 'decisionLines'.",
+                    $field
+                ));
+            }
+        }
+        if (!isset($params['taxDecisionId']) || !is_string($params['taxDecisionId']) || $params['taxDecisionId'] === '') {
+            throw new \InvalidArgumentException(
+                "'taxDecisionId' is required: every invoice is created from an immutable tax decision (POST /v1/tax-decisions)."
+            );
+        }
+        if (!isset($params['decisionLines']) || !is_array($params['decisionLines']) || $params['decisionLines'] === []) {
+            throw new \InvalidArgumentException(
+                "'decisionLines' is required and non-empty: each entry references a decision line by 'taxLineRef' and completes the document-only details (unit, product)."
+            );
+        }
+
         $headers = [];
         if ($idempotencyKey !== null) {
             $headers['Idempotency-Key'] = $idempotencyKey;
@@ -68,7 +102,12 @@ class Invoice
     }
 
     /**
-     * Update a draft invoice. Only draft invoices can be edited.
+     * Update a draft invoice's non-fiscal fields.
+     *
+     * Only drafts can be updated, and only `dates`, `payment`, `notes`,
+     * `purchaseOrderNumber` and `metadata`: the commercial operation and its
+     * VAT belong to the decision, which is immutable. To change the operation,
+     * take a new decision and create a new draft.
      *
      * @param string               $id      Invoice ID
      * @param array<string, mixed> $params  Fields to update
@@ -88,6 +127,52 @@ class Invoice
     public static function delete(string $id): array
     {
         return HttpClient::request('DELETE', self::BASE_PATH . '/' . $id);
+    }
+
+    /**
+     * Bind a FINAL tax decision to a commercial draft that already exists —
+     * typically the one `Quote::convert()` produced.
+     *
+     * This closes the quote cycle on ONE document:
+     *
+     * ```php
+     * $converted = \Facturino\Quote::convert($quoteId);
+     * $decision  = \Facturino\TaxDecision::create($input, $idempotencyKey);
+     * \Facturino\Invoice::bindTaxDecision($converted['invoiceId'], [
+     *     'taxDecisionId' => $decision['id'],
+     *     'decisionLines' => [['taxLineRef' => 'l1', 'unit' => 'unit']],
+     * ]);
+     * \Facturino\Invoice::finalize($converted['invoiceId']);
+     * ```
+     *
+     * The invoice stays a DRAFT: binding freezes the VAT, `finalize()` issues
+     * it. Idempotent on the decision — replaying the same call returns the same
+     * invoice.
+     *
+     * @param string               $id             Commercial draft ID (inv_xxx)
+     * @param array<string, mixed> $params         taxDecisionId + decisionLines
+     * @param string|null          $idempotencyKey Optional Idempotency-Key header
+     * @return array<string, mixed>
+     */
+    public static function bindTaxDecision(string $id, array $params, ?string $idempotencyKey = null): array
+    {
+        if (!isset($params['taxDecisionId']) || !is_string($params['taxDecisionId']) || $params['taxDecisionId'] === '') {
+            throw new \InvalidArgumentException(
+                "'taxDecisionId' is required: a commercial draft is fiscalised by binding a FINAL tax decision to it."
+            );
+        }
+        if (!isset($params['decisionLines']) || !is_array($params['decisionLines']) || $params['decisionLines'] === []) {
+            throw new \InvalidArgumentException(
+                "'decisionLines' is required and non-empty: each entry references a decision line by 'taxLineRef' and completes the document-only details (unit, product)."
+            );
+        }
+
+        $headers = [];
+        if ($idempotencyKey !== null) {
+            $headers['Idempotency-Key'] = $idempotencyKey;
+        }
+
+        return HttpClient::request('POST', self::BASE_PATH . '/' . $id . '/bind-tax-decision', $params, null, $headers);
     }
 
     /**

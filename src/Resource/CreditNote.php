@@ -17,6 +17,19 @@ class CreditNote
     /**
      * Create a draft credit note.
      *
+     * A credit note credits fractions of the original invoice's frozen lines
+     * through `creditedLines`. The rate, category, VATEX code and legal
+     * mention are inherited from the invoice's snapshot, never restated —
+     * there is no way to state VAT on a credit note.
+     *
+     * A credited line states EITHER `quantity` or `amountTTC`, never both: they
+     * are two ways of saying how much of the line is credited. Omit both to
+     * credit the line's whole remaining balance.
+     *
+     *   ['relatedInvoiceId' => 'inv_1', 'creditNoteType' => 'partial',
+     *    'reasonCode' => 'quality',
+     *    'creditedLines' => [['taxLineRef' => 'abo-pro', 'amountTTC' => 1200]]]
+     *
      * @param array<string, mixed> $params          Credit note data
      * @param string|null          $idempotencyKey  Idempotency key
      * @return array<string, mixed>
