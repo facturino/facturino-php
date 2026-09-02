@@ -211,6 +211,9 @@ final class TaxDecisionTest extends TestCase
             "id": "taxdec_pending", "object": "tax_decision",
             "status": "pending_verification", "totals": null, "amountToCharge": null,
             "invoiceChannel": null, "transactionReporting": null, "paymentReporting": null,
+            "settledObligations": {
+                "invoiceChannel": "none", "transactionReporting": "ereporting", "paymentReporting": null
+            },
             "issues": [{"code": "vies_unavailable", "message": "VIES is unreachable."}]
         }');
 
@@ -221,6 +224,12 @@ final class TaxDecisionTest extends TestCase
         $this->assertNull($decision['amountToCharge']);
         $this->assertNull($decision['totals']);
         $this->assertSame('vies_unavailable', $decision['issues'][0]['code']);
+        // The three document axes stay null — an axis is never read off a
+        // decision that did not conclude — while what French law settled anyway
+        // is carried as a VALUE.
+        $this->assertNull($decision['invoiceChannel']);
+        $this->assertSame('ereporting', $decision['settledObligations']['transactionReporting']);
+        $this->assertNull($decision['settledObligations']['paymentReporting']);
     }
 
     public function testRetryCarriesLineageAndLeavesTheOperationUnchanged(): void
@@ -404,6 +413,255 @@ final class TaxDecisionTest extends TestCase
         $this->assertSame('VATEX-EU-G', $body['lines'][1]['vatexCode']);
         $this->assertSame('GB', $body['lines'][1]['placeOfSupply']);
         $this->assertSame('integration', $decision['taxSource']);
+    }
+
+    public function testEuB2cDestinationTraceIsReadable(): void
+    {
+        // The rate a document bears must be auditable years later: registry
+        // version, source, verification date and period travel with it.
+        $this->server->respondWith(201, '{
+            "id": "taxdec_eu1", "object": "tax_decision", "status": "final",
+            "taxSource": "facturino",
+            "euB2cDestination": {
+                "coveredLineIds": ["line-1"],
+                "ruleKinds": ["tbe_services"],
+                "destinationMemberState": "DE",
+                "destinationTerritoryId": "DE",
+                "place": "destination",
+                "basis": "threshold_exceeded",
+                "reference": "Directive 2006/112/CE art. 59 quater",
+                "detail": "cap passed",
+                "threshold": {
+                    "decidedOn": "ledger_cumulative", "capCents": 1000000,
+                    "stateId": "2026_test", "year": "2026", "stateVersion": 4, "sequence": 7,
+                    "reservationId": "claim_1", "coverageMode": "mixed_channels",
+                    "cumulativeBeforeMinCents": 140000, "operationValueMinCents": 2900,
+                    "cumulativeAfterMinCents": 142900
+                },
+                "option": null,
+                "mechanism": {"kind": "oss_union", "memberState": "DE", "reference": "regime UE"},
+                "rate": {
+                    "registryVersion": "eu-standard-rates-2026-09-01",
+                    "memberState": "DE", "territoryId": "DE", "regionId": null,
+                    "centipercent": 1900, "validFrom": "2026-09-01", "validTo": null,
+                    "source": "Commission europeenne", "verifiedAt": "2026-09-01"
+                }
+            }
+        }');
+
+        $decision = \Facturino\TaxDecision::create([
+            'taxSource' => 'facturino',
+            'customerId' => 'cus_8f2k4m9n',
+            'effectiveAt' => '2026-09-15',
+            'currency' => 'eur',
+            'priceMode' => 'tax_exclusive',
+            'lines' => [[
+                'reference' => 'line-1', 'description' => 'Abonnement',
+                'category' => 'electronically_supplied_services',
+                'rateCategory' => 'standard', 'unitAmount' => 2900, 'quantity' => '1',
+            ]],
+        ], 'order-eu-1');
+
+        $this->assertSame('destination', $decision['euB2cDestination']['place']);
+        $this->assertSame(1900, $decision['euB2cDestination']['rate']['centipercent']);
+        $this->assertSame(
+            'eu-standard-rates-2026-09-01',
+            $decision['euB2cDestination']['rate']['registryVersion']
+        );
+        $this->assertSame('oss_union', $decision['euB2cDestination']['mechanism']['kind']);
+        // Le registre sur lequel la décision s'est appuyée, et la tranche prise.
+        $this->assertSame('2026_test', $decision['euB2cDestination']['threshold']['stateId']);
+        $this->assertSame(142900, $decision['euB2cDestination']['threshold']['cumulativeAfterMinCents']);
+    }
+
+    public function testGoodsMovementReachesAnIntegrationLine(): void
+    {
+        // The distance-sale rule is decided by a fact, never by an assumption.
+        $this->server->respondWith(201, '{
+            "id": "taxdec_int2", "object": "tax_decision", "status": "final",
+            "taxSource": "integration"
+        }');
+
+        \Facturino\TaxDecision::create([
+            'taxSource' => 'integration',
+            'customerId' => 'cus_8f2k4m9n',
+            'effectiveAt' => '2026-09-15',
+            'currency' => 'eur',
+            'priceMode' => 'tax_exclusive',
+            'lines' => [[
+                'reference' => 'line-1', 'description' => 'Chaise', 'category' => 'goods',
+                'goodsMovement' => 'dispatched_to_buyer_territory',
+                'unitAmount' => 2900, 'quantity' => '1', 'vatRate' => 1900, 'vatCode' => 'S',
+            ]],
+        ], 'order-goods-1');
+
+        $body = json_decode($this->server->lastRequest()['body'], true);
+        $this->assertSame('dispatched_to_buyer_territory', $body['lines'][0]['goodsMovement']);
+    }
+
+    public function testEuThresholdLedgerRoundTrips(): void
+    {
+        // Les totaux courants vivent dans leur propre registre annuel,
+        // append-only, et portent DEUX compteurs séparés.
+        $this->server->respondWith(201, '{
+            "object": "eu_threshold_ledger", "id": "2026_test", "year": "2026",
+            "status": "open", "review": null,
+            "capCents": 1000000, "evidenceCapCents": 10000000,
+            "acquiredMin": 100000, "acquiredEvidenceMin": 60000,
+            "reservedMin": 0, "reservedMax": 0,
+            "remainingMin": 900000, "evidenceRemainingMin": 9940000,
+            "adjustmentTotal": 0, "correctionTotal": 0,
+            "reservations": [], "entries": [],
+            "entriesHasMore": false, "entriesNextCursor": null
+        }');
+        $ledger = \Facturino\EuThresholdLedger::open([
+            'year' => '2026',
+            'previousYearAmount' => 250000,
+            'currentYearOpening' => 100000,
+            'previousYearEvidenceAmount' => 150000,
+            'currentYearEvidenceOpening' => 60000,
+            'coverageMode' => 'mixed_channels',
+            'externalCompleteThroughDate' => '2026-01-01',
+        ]);
+        $this->assertSame(900000, $ledger['remainingMin']);
+        // Acquis et réservé se lisent à part : une tranche tenue peut disparaître.
+        $this->assertSame(100000, $ledger['acquiredMin']);
+        $this->assertSame(0, $ledger['reservedMax']);
+        // Le second compteur a son propre plafond et son propre reste.
+        $this->assertSame(10000000, $ledger['evidenceCapCents']);
+        $this->assertSame(9940000, $ledger['evidenceRemainingMin']);
+        $this->assertSame('/v1/eu-threshold-ledgers', $this->server->lastRequest()['path']);
+
+        $this->server->respondWith(201, '{
+            "object": "eu_threshold_ledger", "id": "2026_test", "year": "2026",
+            "adjustmentTotal": 40000, "reservations": [], "entries": []
+        }');
+        $adjusted = \Facturino\EuThresholdLedger::adjust('2026', [
+            'reference' => 'adj-marketplace-08',
+            'amount' => 40000,
+            'evidenceAmount' => 25000,
+            'externalCompleteThroughDate' => '2026-09-15',
+            'reason' => 'Marketplace sales, August',
+        ]);
+        $this->assertSame(40000, $adjusted['adjustmentTotal']);
+        $this->assertSame(
+            '/v1/eu-threshold-ledgers/2026/adjustments',
+            $this->server->lastRequest()['path']
+        );
+        $body = json_decode($this->server->lastRequest()['body'], true);
+        $this->assertSame('adj-marketplace-08', $body['reference']);
+        $this->assertSame(25000, $body['evidenceAmount']);
+    }
+
+    public function testTheTwoCountersMayLegitimatelyDiverge(): void
+    {
+        // Aucun des deux ne borne l'autre : leurs périmètres diffèrent.
+        $this->server->respondWith(201, '{
+            "object": "eu_threshold_ledger", "acquiredMin": 10000, "acquiredEvidenceMin": 2000000
+        }');
+        $ledger = \Facturino\EuThresholdLedger::open([
+            'year' => '2026',
+            'previousYearAmount' => 10000,
+            'currentYearOpening' => 10000,
+            'previousYearEvidenceAmount' => 4000000,
+            'currentYearEvidenceOpening' => 2000000,
+            'coverageMode' => 'facturino_only',
+            'externalCompleteThroughDate' => '2026-01-01',
+        ]);
+        $this->assertGreaterThan($ledger['acquiredMin'], $ledger['acquiredEvidenceMin']);
+        $body = json_decode($this->server->lastRequest()['body'], true);
+        $this->assertGreaterThan($body['previousYearAmount'], $body['previousYearEvidenceAmount']);
+    }
+
+    public function testAMovementPublishesItsRemainingBalance(): void
+    {
+        // Un mouvement rend ce qu'il a apporté, une fois.
+        $this->server->respondWith(200, '{
+            "object": "list", "url": "/v1/eu-threshold-ledgers/2026/entries",
+            "data": [{
+                "id": "opening", "kind": "opening", "amountMin": 100000,
+                "correctable": true, "correctedMin": 30000, "correctionCount": 1,
+                "remainingMin": 70000, "remainingEvidenceMin": 50000
+            }],
+            "has_more": false, "next_cursor": null
+        }');
+        $page = \Facturino\EuThresholdLedger::listEntries('2026');
+        $this->assertSame(70000, $page['data'][0]['remainingMin']);
+        $this->assertSame(30000, $page['data'][0]['correctedMin']);
+    }
+
+    public function testEuThresholdMovementsArePaginatedWithACursor(): void
+    {
+        $this->server->respondWith(200, '{
+            "object": "list", "url": "/v1/eu-threshold-ledgers/2026/entries",
+            "data": [{"id": "adj_abc", "sequence": 1, "kind": "external_adjustment"}],
+            "has_more": true, "next_cursor": "adj_abc"
+        }');
+        $page = \Facturino\EuThresholdLedger::listEntries('2026', ['limit' => 1]);
+        $this->assertSame('adj_abc', $page['next_cursor']);
+        $this->assertSame('/v1/eu-threshold-ledgers/2026/entries', $this->server->lastRequest()['path']);
+    }
+
+    public function testAnAmountComesBackOnlyThroughAQualifiedCorrection(): void
+    {
+        // Art. 90 §1 réduit la base d'une opération IDENTIFIÉE : la correction
+        // nomme le mouvement corrigé, sa qualification et sa preuve. Il n'existe
+        // aucun montant négatif générique dans cette ressource.
+        $this->server->respondWith(201, '{
+            "object": "eu_threshold_ledger", "correctionTotal": 20000
+        }');
+        $corrected = \Facturino\EuThresholdLedger::correct('2026', [
+            'reference' => 'cor-credit-note-12',
+            'correctsEntryId' => 'adj_abc',
+            'kind' => 'credit_note',
+            'amount' => 20000,
+            'evidenceAmount' => 10000,
+            'relatedResourceType' => 'credit_note',
+            'relatedResourceId' => 'crn_123',
+            'evidenceReference' => 'AV-2026-0012',
+            'reason' => 'Avoir total sur une vente comptee en aout',
+        ]);
+        $this->assertSame(20000, $corrected['correctionTotal']);
+        $this->assertSame(
+            '/v1/eu-threshold-ledgers/2026/corrections',
+            $this->server->lastRequest()['path']
+        );
+        $body = json_decode($this->server->lastRequest()['body'], true);
+        $this->assertSame('adj_abc', $body['correctsEntryId']);
+        $this->assertSame('AV-2026-0012', $body['evidenceReference']);
+    }
+
+    public function testALedgerUnderReviewStopsDeciding(): void
+    {
+        $this->server->respondWith(200, '{
+            "object": "eu_threshold_ledger", "status": "review_required",
+            "review": {"code": "declared_by_administrator", "detail": "x", "openedAt": "y"}
+        }');
+        $reviewed = \Facturino\EuThresholdLedger::review('2026', ['reason' => 'Chiffre conteste']);
+        $this->assertSame('review_required', $reviewed['status']);
+        $this->assertSame('/v1/eu-threshold-ledgers/2026/review', $this->server->lastRequest()['path']);
+
+        $this->server->respondWith(200, '{
+            "object": "eu_threshold_ledger", "status": "open", "review": null
+        }');
+        $settled = \Facturino\EuThresholdLedger::resolveReview('2026', [
+            'reconciledVersion' => 4,
+            'reconciledAcquiredMin' => 100000,
+            'reconciledAcquiredEvidenceMin' => 60000,
+            'evidenceReference' => 'RECON-2026-09',
+            'reason' => 'Corrige',
+        ]);
+        $this->assertSame('open', $settled['status']);
+        // Un commentaire seul ne rouvre jamais un registre : les chiffres
+        // vérifiés voyagent avec la demande.
+        $body = json_decode($this->server->lastRequest()['body'], true);
+        $this->assertSame(4, $body['reconciledVersion']);
+        $this->assertSame(100000, $body['reconciledAcquiredMin']);
+        $this->assertSame('RECON-2026-09', $body['evidenceReference']);
+        $this->assertSame(
+            '/v1/eu-threshold-ledgers/2026/review/resolve',
+            $this->server->lastRequest()['path']
+        );
     }
 
     public function testBindTaxDecisionFiscalisesTheConvertedDraft(): void
