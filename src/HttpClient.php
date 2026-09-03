@@ -232,6 +232,8 @@ final class HttpClient
         $docUrl = $error['doc_url'] ?? null;
         $requestId = $error['request_id'] ?? null;
         $hint = $error['hint'] ?? null;
+        // Optional and additive: absent on a refusal that carries no detail.
+        $issues = \is_array($error['issues'] ?? null) ? $error['issues'] : [];
 
         match (true) {
             $statusCode === 401 => throw new AuthenticationException($message, $statusCode, $requestId),
@@ -247,6 +249,7 @@ final class HttpClient
                 $docUrl,
                 $requestId,
                 $hint,
+                $issues,
             ),
             $statusCode >= 400 && $statusCode < 500 => throw new InvalidRequestException(
                 $message,
@@ -257,6 +260,7 @@ final class HttpClient
                 $docUrl,
                 $requestId,
                 $hint,
+                $issues,
             ),
             default => throw new ApiException($message, $statusCode, $requestId),
         };

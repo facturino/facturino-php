@@ -8,7 +8,7 @@ namespace Facturino\Exception;
  * Thrown for 4xx client errors (validation, not found, invalid state transitions).
  *
  * Mirrors the Stripe-like error structure:
- * {error: {type, code, message, param, doc_url, request_id, hint}}
+ * {error: {type, code, message, param, doc_url, request_id, hint, issues}}
  */
 class InvalidRequestException extends ApiException
 {
@@ -18,6 +18,9 @@ class InvalidRequestException extends ApiException
     private ?string $docUrl;
     private ?string $hint;
 
+    /**
+     * @param list<array{code: string, param: ?string, message: string}> $issues
+     */
     public function __construct(
         string $message = '',
         int $httpStatus = 400,
@@ -27,8 +30,9 @@ class InvalidRequestException extends ApiException
         ?string $docUrl = null,
         ?string $requestId = null,
         ?string $hint = null,
+        array $issues = [],
     ) {
-        parent::__construct($message, $httpStatus, $requestId);
+        parent::__construct($message, $httpStatus, $requestId, 0, null, $issues);
         $this->errorType = $errorType;
         $this->errorCode = $errorCode;
         $this->param = $param;
