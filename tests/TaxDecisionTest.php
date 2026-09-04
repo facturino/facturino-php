@@ -709,6 +709,36 @@ final class TaxDecisionTest extends TestCase
         ]);
     }
 
+    public function testFinalizeSendsNoBodyWithoutACollection(): void
+    {
+        $this->server->respondWith(200, '{"id": "inv_1", "status": "finalized", "number": "FAC-00001"}');
+
+        \Facturino\Invoice::finalize('inv_1');
+
+        $request = $this->server->lastRequest();
+        $this->assertSame('POST', $request['method']);
+        $this->assertStringContainsString('/v1/invoices/inv_1/finalize', $request['path']);
+        $this->assertSame('', $request['body']);
+    }
+
+    public function testFinalizeIssuesAnAlreadyCollectedInvoiceAsSettled(): void
+    {
+        $this->server->respondWith(200, '{"id": "inv_1", "status": "paid", "number": "FAC-00001"}');
+
+        $invoice = \Facturino\Invoice::finalize('inv_1', [
+            'amount' => 120000,
+            'method' => 'card',
+            'reference' => 'ch_3Kj9aLZ',
+            'paidAt' => '2026-05-10T12:00:00.000Z',
+        ]);
+
+        $this->assertSame('paid', $invoice['status']);
+        $body = json_decode($this->server->lastRequest()['body'], true);
+        $this->assertSame(120000, $body['payment']['amount']);
+        $this->assertSame('card', $body['payment']['method']);
+        $this->assertSame('2026-05-10T12:00:00.000Z', $body['payment']['paidAt']);
+    }
+
     public function testInvoiceExposesTheThreeAxes(): void
     {
         $this->server->respondWith(200, '{

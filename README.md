@@ -69,7 +69,7 @@ $invoice = \Facturino\Invoice::create([
 // 4. Choose your collection flow — see the two variants below.
 ```
 
-**Immediate collection** — capture the decided amount, verify, then finalize:
+**Immediate collection** — capture the decided amount, verify, then finalize WITH the collection:
 
 ```php
 // Capture exactly amountToCharge through your payment provider, payment
@@ -92,12 +92,13 @@ if ($settlement['currency'] !== $source['currency']) {
     throw new \RuntimeException('currency mismatch');
 }
 
-\Facturino\Invoice::finalize($invoice['id']);
-
-// Record the REAL payment — its real date, method and the settlement's
+// Finalize AND record the REAL payment in one call: the numbering and the
+// collection land in the same transaction, so the issued original (PDF and
+// Factur-X) is rendered on a settled invoice. The array is the very one
+// Payment::create() takes — its real date, method and the settlement's
 // financial reference, never the decision id
 // (transfer, card, check, cash, direct_debit, sepa, paypal or other).
-\Facturino\Payment::create($invoice['id'], [
+\Facturino\Invoice::finalize($invoice['id'], [
     'amount' => $settlement['amount'],
     'method' => $settlement['method'],
     'reference' => $settlement['reference'],

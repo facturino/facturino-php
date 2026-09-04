@@ -4,6 +4,18 @@ All notable changes to `facturino/facturino-php` are documented here. This
 project adheres to [Semantic Versioning](https://semver.org/) and
 [Keep a Changelog](https://keepachangelog.com/).
 
+## [2.3.0] - 2026-09-04
+
+### Added
+- `Invoice::finalize($id, $payment)` — an optional collection applied in the
+  SAME transaction as the numbering, so an invoice already paid before issuance
+  is ISSUED settled: the original PDF and Factur-X are rendered on a settled
+  document. `$payment` is the very array `Payment::create()` takes (integer
+  centimes), and the resulting payment is indistinguishable from one recorded
+  afterwards. All or nothing: a collection beyond the amount due is refused
+  (`422 payment_exceeds_amount_due`) and the invoice stays a draft. Calling
+  `Invoice::finalize($id)` without a payment is unchanged.
+
 ## [2.2.0] - 2026-09-03
 
 ### Added

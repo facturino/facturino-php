@@ -179,12 +179,28 @@ class Invoice
      * Finalize an invoice. Assigns a number and locks the invoice.
      * This action is irreversible.
      *
-     * @param string $id Invoice ID
+     * Pass $payment when the invoice was already collected BEFORE issuance:
+     * numbering and collection are applied in the SAME transaction, so the
+     * original PDF and Factur-X are rendered on a settled invoice and say so.
+     * $payment is the very array Payment::create() takes (amount in integer
+     * centimes), and the resulting payment is indistinguishable from one
+     * recorded afterwards.
+     *
+     * All or nothing: a collection beyond the amount due is refused
+     * (422 payment_exceeds_amount_due) and the invoice stays a draft — no
+     * number is burned. Without $payment, the behaviour is unchanged.
+     *
+     * @param string                    $id      Invoice ID
+     * @param array<string, mixed>|null $payment Collection received before issuance
      * @return array<string, mixed>
      */
-    public static function finalize(string $id): array
+    public static function finalize(string $id, ?array $payment = null): array
     {
-        return HttpClient::request('POST', self::BASE_PATH . '/' . $id . '/finalize');
+        return HttpClient::request(
+            'POST',
+            self::BASE_PATH . '/' . $id . '/finalize',
+            $payment === null ? null : ['payment' => $payment],
+        );
     }
 
     /**
