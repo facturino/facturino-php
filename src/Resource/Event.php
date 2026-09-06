@@ -46,8 +46,14 @@ class Event
      * @param string $id Event ID
      * @return array<string, mixed>
      */
-    public static function retry(string $id): array
+    /**
+     * Retry the delivery. With $endpointId, replay the event to that endpoint
+     * even if it was already delivered there (keep the receiver idempotent).
+     */
+    public static function retry(string $id, ?string $endpointId = null): array
     {
-        return HttpClient::request('POST', self::BASE_PATH . '/' . $id . '/retry');
+        $body = $endpointId !== null ? ['endpointId' => $endpointId] : null;
+
+        return HttpClient::request('POST', self::BASE_PATH . '/' . $id . '/retry', $body);
     }
 }
