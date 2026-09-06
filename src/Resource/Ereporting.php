@@ -10,7 +10,14 @@ use Facturino\Util\Collection;
 /**
  * E-reporting resource — /v1/ereporting/declarations
  *
- * French e-reporting declarations (B2C, international, intra-EU).
+ * French e-reporting declarations. Types — transactions: b2c, international,
+ * intra_eu, domestic_b2b; payments: payment_b2c, payment_international,
+ * payment_intra_eu, payment_domestic_b2b. Lines carry category, amount, vatRate,
+ * vatAmount (integer centimes / centipercent) and, optionally, date, issueDate,
+ * invoiceNumber, country, partnerVat, partnerName, vatCategoryCode, vatexCode,
+ * count, documentType ("380" invoice, "381" credit note), originalInvoiceNumber
+ * and originalInvoiceDate (the invoice a credit note corrects — both are
+ * required to transmit a unit credit note, DGFiP G1.32).
  */
 class Ereporting
 {
