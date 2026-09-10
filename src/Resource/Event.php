@@ -41,14 +41,10 @@ class Event
     }
 
     /**
-     * Retry delivery of a failed event.
+     * Return a scheduling receipt. With $endpointId, also replay events already
+     * delivered there; the receiver must remain idempotent by event ID.
      *
-     * @param string $id Event ID
-     * @return array<string, mixed>
-     */
-    /**
-     * Retry the delivery. With $endpointId, replay the event to that endpoint
-     * even if it was already delivered there (keep the receiver idempotent).
+     * @return array{id: string, object: string, retryScheduled: bool, endpointId?: string}
      */
     public static function retry(string $id, ?string $endpointId = null): array
     {

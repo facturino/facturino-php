@@ -52,6 +52,7 @@ final class HttpClient
             );
         }
 
+        $method = strtoupper($method);
         $url = Facturino::getApiBase() . $path;
 
         if ($queryParams !== null) {
@@ -75,6 +76,16 @@ final class HttpClient
             'Accept: application/json',
         ];
 
+        $idempotencyKey = null;
+        foreach ($extraHeaders as $key => $value) {
+            if (strtolower($key) === 'idempotency-key') { $idempotencyKey = $value; }
+        }
+        if ($method === 'POST' && $idempotencyKey === null && Facturino::getAutoIdempotency()) {
+            $idempotencyKey = bin2hex(random_bytes(16));
+            $extraHeaders['Idempotency-Key'] = $idempotencyKey;
+        }
+        $canRetry = $method !== 'POST' || ($idempotencyKey !== null && $idempotencyKey !== '');
+        $remainingBudget = Facturino::getRetryBudget() * 1000;
         foreach ($extraHeaders as $key => $value) {
             $headers[] = $key . ': ' . $value;
         }
@@ -104,17 +115,22 @@ final class HttpClient
                     return self::decodeResponse($responseBody);
                 }
 
-                if (in_array($statusCode, self::RETRYABLE_STATUS_CODES, true) && $attempt + 1 < self::MAX_ATTEMPTS) {
+                if ($canRetry && in_array($statusCode, self::RETRYABLE_STATUS_CODES, true) && $attempt + 1 < self::MAX_ATTEMPTS) {
                     $delay = self::computeRetryDelay($attempt, $responseHeaders);
-                    usleep($delay * 1000);
-                    $attempt++;
-                    continue;
+                    if ($delay <= $remainingBudget) {
+                        $remainingBudget -= $delay;
+                        usleep($delay * 1000);
+                        $attempt++;
+                        continue;
+                    }
                 }
 
                 self::handleErrorResponse($statusCode, $responseBody);
             } catch (ApiException $e) {
-                if (in_array($e->getHttpStatus(), self::RETRYABLE_STATUS_CODES, true) && $attempt + 1 < self::MAX_ATTEMPTS) {
+                if ($canRetry && $e->getHttpStatus() === 0 && $attempt + 1 < self::MAX_ATTEMPTS) {
                     $delay = self::computeRetryDelay($attempt, []);
+                    if ($delay > $remainingBudget) { throw $e; }
+                    $remainingBudget -= $delay;
                     usleep($delay * 1000);
                     $attempt++;
                     $lastException = $e;
@@ -184,9 +200,10 @@ final class HttpClient
     {
         // Respect Retry-After header if present
         if (isset($responseHeaders['retry-after'])) {
-            $retryAfter = (int) $responseHeaders['retry-after'];
-            if ($retryAfter > 0 && $retryAfter <= 60) {
-                return $retryAfter * 1000;
+            $value = $responseHeaders['retry-after'];
+            $retryAfter = is_numeric($value) ? (float) $value : (($date = strtotime($value)) === false ? -1 : max(0, $date - microtime(true)));
+            if (is_finite($retryAfter) && $retryAfter >= 0) {
+                return $retryAfter >= PHP_INT_MAX / 1000 ? PHP_INT_MAX : (int) ceil($retryAfter * 1000);
             }
         }
 
