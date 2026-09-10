@@ -40,6 +40,7 @@ final class WebhookEventData implements \JsonSerializable
 
     public readonly ?string $invoiceId;
     public readonly ?string $paymentId;
+    public readonly ?PaymentCollectionStatus $fr212;
     public readonly ?string $method;
     public readonly ?string $pa_invoice_id;
     public readonly ?string $sender_siret;
@@ -66,6 +67,7 @@ final class WebhookEventData implements \JsonSerializable
         $this->paInvoiceId = $data['paInvoiceId'] ?? null;
         $this->invoiceId = $data['invoiceId'] ?? null;
         $this->paymentId = $data['paymentId'] ?? null;
+        $this->fr212 = isset($data['fr212']) ? PaymentCollectionStatus::fromArray($data['fr212']) : null;
         $this->method = $data['method'] ?? null;
         $this->pa_invoice_id = $data['pa_invoice_id'] ?? null;
         $this->sender_siret = $data['sender_siret'] ?? null;

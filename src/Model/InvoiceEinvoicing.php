@@ -31,6 +31,7 @@ final class InvoiceEinvoicing implements \JsonSerializable
     public readonly ?PaRejectionSource $rejectionSource;
     public readonly ?string $rejectionNote;
     public readonly ?string $routingIdentifier;
+    public readonly ?string $senderRoutingIdentifier;
     public readonly ?string $buyerReachableAt;
     public readonly ?string $directoryCheckedAt;
     public readonly ?string $ereportingPaymentId;
@@ -39,6 +40,7 @@ final class InvoiceEinvoicing implements \JsonSerializable
     private function __construct(array $data)
     {
         $this->rawData = $data;
+        $this->senderRoutingIdentifier = $data['senderRoutingIdentifier'] ?? null;
         $this->paId = isset($data['paId']) ? $data['paId'] : null;
         $this->paStatus = isset($data['paStatus']) ? $data['paStatus'] : null;
         $this->paStatusCode = isset($data['paStatusCode']) ? $data['paStatusCode'] : null;

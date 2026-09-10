@@ -17,11 +17,13 @@ final class InvoiceSubmissionArtefact implements \JsonSerializable
     public readonly ?string $generatedAt;
     public readonly ?array $correctedRules;
     public readonly ?string $routingIdentifier;
+    public readonly ?string $sellerRoutingIdentifier;
 
     /** @param array<string, mixed> $data */
     private function __construct(array $data)
     {
         $this->rawData = $data;
+        $this->sellerRoutingIdentifier = $data['sellerRoutingIdentifier'] ?? null;
         $this->kind = isset($data['kind']) ? $data['kind'] : null;
         $this->path = isset($data['path']) ? $data['path'] : null;
         $this->generatedAt = isset($data['generatedAt']) ? $data['generatedAt'] : null;
