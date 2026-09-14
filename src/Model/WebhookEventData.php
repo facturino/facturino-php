@@ -12,6 +12,9 @@ final class WebhookEventData implements \JsonSerializable
 {
     /** Original payload, including absent/null distinctions and unknown fields. */
     public readonly array $rawData;
+    public readonly ?string $paRejectionReason;
+    public readonly ?string $paRejectionCode;
+    public readonly ?ObligationFollowUp $obligation;
     public readonly ?string $paStatus;
     public readonly ?string $paInvoiceId;
     public readonly ?string $id;
@@ -63,6 +66,9 @@ final class WebhookEventData implements \JsonSerializable
     private function __construct(array $data)
     {
         $this->rawData = $data;
+        $this->paRejectionReason = $data['paRejectionReason'] ?? null;
+        $this->paRejectionCode = $data['paRejectionCode'] ?? null;
+        $this->obligation = isset($data['obligation']) ? ObligationFollowUp::fromArray($data['obligation']) : null;
         $this->paStatus = $data['paStatus'] ?? null;
         $this->paInvoiceId = $data['paInvoiceId'] ?? null;
         $this->invoiceId = $data['invoiceId'] ?? null;

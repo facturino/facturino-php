@@ -8,6 +8,7 @@ namespace Facturino\Model;
 enum EventDataFamily: string
 {
     case Invoice = 'Invoice';
+    case Obligation = 'Obligation';
     case IncomingInvoice = 'IncomingInvoice';
     case Quote = 'Quote';
     case CreditNote = 'CreditNote';
@@ -30,7 +31,8 @@ enum EventDataFamily: string
             'customer.created', 'customer.updated', 'customer.deleted' => self::Customer,
             'payment.created' => self::PaymentCreated,
             'payment.received' => self::PaymentReceived,
-            'ereporting.submitted' => self::Ereporting,
+            'ereporting.submitted', 'ereporting.accepted', 'ereporting.rejected' => self::Ereporting,
+            'invoice.obligation_updated', 'credit_note.obligation_updated', 'payment.obligation_updated', 'ereporting.obligation_updated' => self::Obligation,
             'recurring_invoice.generated' => self::RecurringGenerated,
             'recurring_invoice.failed' => self::RecurringFailed,
             'export.ready' => self::Export,

@@ -12,6 +12,7 @@ final class Payment implements \JsonSerializable
 {
     /** Original payload, including absent/null distinctions and unknown fields. */
     public readonly array $rawData;
+    public readonly ?ObligationFollowUp $reportingFollowUp;
     public readonly ?string $id;
     public readonly ?string $object;
     public readonly ?string $type;
@@ -34,6 +35,7 @@ final class Payment implements \JsonSerializable
     private function __construct(array $data)
     {
         $this->rawData = $data;
+        $this->reportingFollowUp = isset($data['reportingFollowUp']) ? ObligationFollowUp::fromArray($data['reportingFollowUp']) : null;
         $this->companyId = $data['companyId'] ?? null;
         $this->invoiceId = $data['invoiceId'] ?? null;
         $this->livemode = $data['livemode'] ?? null;

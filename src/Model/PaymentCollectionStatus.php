@@ -12,6 +12,7 @@ final class PaymentCollectionStatus implements \JsonSerializable
 {
     /** Original payload, including absent/null distinctions and unknown fields. */
     public readonly array $rawData;
+    public readonly ?ObligationFollowUp $obligation;
     public readonly ?string $state;
     public readonly ?string $sentAt;
     public readonly ?string $lastErrorCode;
@@ -22,6 +23,7 @@ final class PaymentCollectionStatus implements \JsonSerializable
     private function __construct(array $data)
     {
         $this->rawData = $data;
+        $this->obligation = isset($data['obligation']) ? ObligationFollowUp::fromArray($data['obligation']) : null;
         $this->state = isset($data['state']) ? $data['state'] : null;
         $this->sentAt = isset($data['sentAt']) ? $data['sentAt'] : null;
         $this->lastErrorCode = isset($data['lastErrorCode']) ? $data['lastErrorCode'] : null;

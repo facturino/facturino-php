@@ -12,6 +12,11 @@ final class CreditNoteEinvoicing implements \JsonSerializable
 {
     /** Original payload, including absent/null distinctions and unknown fields. */
     public readonly array $rawData;
+    public readonly ?string $directoryCheckedAt;
+    public readonly ?string $buyerReachableAt;
+    public readonly ?string $senderRoutingIdentifier;
+    public readonly ?string $routingIdentifier;
+    public readonly ?ObligationFollowUp $obligation;
     public readonly ?string $paErrorCode;
     public readonly ?string $paStatusCode;
     public readonly ?string $rejectionCode;
@@ -30,6 +35,11 @@ final class CreditNoteEinvoicing implements \JsonSerializable
     private function __construct(array $data)
     {
         $this->rawData = $data;
+        $this->directoryCheckedAt = $data['directoryCheckedAt'] ?? null;
+        $this->buyerReachableAt = $data['buyerReachableAt'] ?? null;
+        $this->senderRoutingIdentifier = $data['senderRoutingIdentifier'] ?? null;
+        $this->routingIdentifier = $data['routingIdentifier'] ?? null;
+        $this->obligation = isset($data['obligation']) ? ObligationFollowUp::fromArray($data['obligation']) : null;
         $this->paErrorCode = isset($data['paErrorCode']) ? $data['paErrorCode'] : null;
         $this->paStatusCode = isset($data['paStatusCode']) ? $data['paStatusCode'] : null;
         $this->rejectionCode = isset($data['rejectionCode']) ? $data['rejectionCode'] : null;

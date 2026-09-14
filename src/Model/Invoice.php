@@ -12,6 +12,7 @@ final class Invoice implements \JsonSerializable
 {
     /** Original payload, including absent/null distinctions and unknown fields. */
     public readonly array $rawData;
+    public readonly ?EReportingBlock $ereportingBlock;
     public readonly ?string $id;
     public readonly ?string $object;
     public readonly ?string $type;
@@ -55,6 +56,7 @@ final class Invoice implements \JsonSerializable
     private function __construct(array $data)
     {
         $this->rawData = $data;
+        $this->ereportingBlock = isset($data['ereportingBlock']) ? EReportingBlock::fromArray($data['ereportingBlock']) : null;
         $this->paymentInfo = $data['paymentInfo'] ?? null;
         $this->archive = $data['archive'] ?? null;
         $this->portal = $data['portal'] ?? null;

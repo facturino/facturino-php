@@ -12,6 +12,7 @@ final class CreditNote implements \JsonSerializable
 {
     /** Original payload, including absent/null distinctions and unknown fields. */
     public readonly array $rawData;
+    public readonly ?EReportingBlock $ereportingBlock;
     public readonly ?string $id;
     public readonly ?string $object;
     public readonly ?string $status;
@@ -48,6 +49,7 @@ final class CreditNote implements \JsonSerializable
     private function __construct(array $data)
     {
         $this->rawData = $data;
+        $this->ereportingBlock = isset($data['ereportingBlock']) ? EReportingBlock::fromArray($data['ereportingBlock']) : null;
         $this->companyId = $data['companyId'] ?? null;
         $this->customer = $data['customer'] ?? null;
         $this->currency = $data['currency'] ?? null;

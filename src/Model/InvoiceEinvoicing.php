@@ -12,6 +12,7 @@ final class InvoiceEinvoicing implements \JsonSerializable
 {
     /** Original payload, including absent/null distinctions and unknown fields. */
     public readonly array $rawData;
+    public readonly ?ObligationFollowUp $obligation;
     public readonly ?string $paId;
     public readonly ?string $paStatus;
     public readonly ?string $paStatusCode;
@@ -40,6 +41,7 @@ final class InvoiceEinvoicing implements \JsonSerializable
     private function __construct(array $data)
     {
         $this->rawData = $data;
+        $this->obligation = isset($data['obligation']) ? ObligationFollowUp::fromArray($data['obligation']) : null;
         $this->senderRoutingIdentifier = $data['senderRoutingIdentifier'] ?? null;
         $this->paId = isset($data['paId']) ? $data['paId'] : null;
         $this->paStatus = isset($data['paStatus']) ? $data['paStatus'] : null;
