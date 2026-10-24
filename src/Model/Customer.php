@@ -17,6 +17,17 @@ final class Customer implements \JsonSerializable
     public readonly ?array $warnings;
     public readonly ?string $name;
     public readonly ?string $type;
+    /**
+     * Optional taxable status, independent of the customer's legal type.
+     * INSEE categories 7, 8 and 9 without it leave business_status_not_evidenced
+     * pending (detailCode tax_status_not_declared). non_taxable yields
+     * natureBasis declared_non_taxable; for a legal person with a VAT number,
+     * VIES validation makes services follow taxable-person rules (CGI art.
+     * 259-0), while unreachable VIES leaves vies_unavailable pending.
+     *
+     * @var 'taxable'|'non_taxable'|null
+     */
+    public readonly ?string $taxStatus;
     public readonly ?string $siret;
     public readonly ?string $vatNumber;
     public readonly ?array $legalForm;
@@ -50,6 +61,7 @@ final class Customer implements \JsonSerializable
         $this->warnings = isset($data['warnings']) ? array_map(static fn (array $item): BuyerNatureWarning => BuyerNatureWarning::fromArray($item), $data['warnings']) : null;
         $this->name = isset($data['name']) ? $data['name'] : null;
         $this->type = isset($data['type']) ? $data['type'] : null;
+        $this->taxStatus = isset($data['taxStatus']) ? $data['taxStatus'] : null;
         $this->siret = isset($data['siret']) ? $data['siret'] : null;
         $this->vatNumber = isset($data['vatNumber']) ? $data['vatNumber'] : null;
         $this->legalForm = isset($data['legalForm']) ? $data['legalForm'] : null;

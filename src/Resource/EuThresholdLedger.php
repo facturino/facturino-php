@@ -30,10 +30,21 @@ use Facturino\HttpClient;
  * Sales made elsewhere are never assumed absent: under `mixed_channels` they
  * enter through adjustments, and the ledger serves a decision only up to the day
  * those channels are declared complete through.
+ * An undeclared EUR 10,000 threshold leaves the decision pending_verification
+ * without amounts (eu_threshold_state_missing); open the year's ledger.
+ * When destination VAT is due without a declared mechanism, it is invoiced on
+ * a final decision with destination_mechanism_missing and registration guidance.
  *
  * The ledger is append-only: there is no update and no delete. Giving an amount
  * back is a qualified CORRECTION, which names the movement it corrects; what
  * cannot be qualified that way puts the ledger under review instead.
+ *
+ * A movement's `kind` is one of `opening`, `external_adjustment`,
+ * `external_correction`, `reservation_consumed`, `reservation_released`,
+ * `review_opened` and `review_resolved`. `reservation_released` gives a
+ * reserved slice back: zero amounts when it was never consumed, negative
+ * amounts when a sale counted for a draft is taken back out before any
+ * issuance (the decision that replaces it counts it once).
  */
 class EuThresholdLedger
 {

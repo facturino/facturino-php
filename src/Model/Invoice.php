@@ -20,7 +20,25 @@ final class Invoice implements \JsonSerializable
     public readonly ?string $number;
     public readonly ?string $currency;
     public readonly ?array $customer;
+    /**
+     * Optional local tax frozen with each invoice item, separate from VAT.
+     * Code (`tgca_mf` today) and exemption are open strings. Rates are integer
+     * centipercent; amounts are integer centimes. An exemption may be null.
+     * Saint-Martin TGCA is 4% with a registration in force, or 0 with a
+     * declared exemption and its mention, under both tax sources.
+     * vatexCode stays an open string; issued documents keep their issued code.
+     * supplyCategory is an optional open-string declaration copied from quote
+     * lines on conversion. Preserve an omission on historical items.
+     *
+     * @var list<array{supplyCategory?: string, vatexCode?: ?string, localTax?: array{code: string, rateCentipercent: int, amount: int, reference: string, exemption: ?string}, ...}>|null
+     */
     public readonly ?array $items;
+    /**
+     * Integer centimes; totalLocalTax is included in totalTTC and the amount
+     * to collect. It is optional on historical responses.
+     *
+     * @var array{totalHT?: int, totalVAT?: int, totalLocalTax?: int, totalTTC?: int, amountDue?: int, amountPaid?: int, ...}|null
+     */
     public readonly ?array $totals;
     public readonly ?array $dates;
     public readonly ?array $deposits;
@@ -31,7 +49,19 @@ final class Invoice implements \JsonSerializable
     public readonly ?string $updated;
     public readonly ?string $taxDecisionId;
     public readonly ?string $taxSource;
+    /**
+     * Undecided commercial lines, including any supplyCategory copied from a
+     * quote. An absent declaration stays absent; its indicative VAT decides none.
+     *
+     * @var array{lines?: list<array{kind?: 'goods'|'service', supplyCategory?: string, ...}>, ...}|null
+     */
     public readonly ?array $commercialDraft;
+    /**
+     * Frozen fiscal position copied from the decision. Its `notices` key holds
+     * the decision's notices frozen with it, in the shape of the entries of
+     * `TaxDecision::$notices`: what was retained and what the seller can do next.
+     * Empty when there is nothing to report; older snapshots may omit the key.
+     */
     public readonly mixed $taxSnapshot;
     public readonly ?string $documentStatus;
     public readonly ?string $transmissionStatus;

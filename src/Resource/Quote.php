@@ -9,6 +9,13 @@ use Facturino\Util\Collection;
 
 /**
  * Quote resource — /v1/quotes
+ *
+ * Input lines accept optional `kind` (`goods` or `service`) and open-string
+ * `supplyCategory`: goods, services, electronically_supplied_services, deposit
+ * or ancillary_costs today. Responses expose the declaration on `items[]`.
+ * A quote's indicative VAT never decides its supply category. Conversion copies
+ * supplyCategory unchanged into the commercial draft; an omission stays
+ * undeclared. Only kind: goods establishes goods without a supplyCategory.
  */
 class Quote
 {
@@ -17,9 +24,9 @@ class Quote
     /**
      * Create a draft quote.
      *
-     * @param array<string, mixed> $params          Quote data
+     * @param array{customerId: string, lines: list<array{description: string, quantity: string, unitPrice: int, vatRate: int, vatCode: string, unit: string, kind?: 'goods'|'service', supplyCategory?: string, ...}>, ...} $params Quote data
      * @param string|null          $idempotencyKey  Idempotency key
-     * @return array<string, mixed>
+     * @return array{items?: list<array{kind?: 'goods'|'service', supplyCategory?: string, ...}>, ...}
      */
     public static function create(array $params, ?string $idempotencyKey = null): array
     {
@@ -48,7 +55,7 @@ class Quote
      * Retrieve a single quote.
      *
      * @param string $id Quote ID (quo_xxx)
-     * @return array<string, mixed>
+     * @return array{items?: list<array{kind?: 'goods'|'service', supplyCategory?: string, ...}>, ...}
      */
     public static function retrieve(string $id): array
     {
@@ -59,8 +66,8 @@ class Quote
      * Update a draft quote. Only draft quotes can be edited.
      *
      * @param string               $id      Quote ID
-     * @param array<string, mixed> $params  Fields to update
-     * @return array<string, mixed>
+     * @param array{lines?: list<array{description: string, quantity: string, unitPrice: int, vatRate: int, vatCode: string, unit: string, kind?: 'goods'|'service', supplyCategory?: string, ...}>, ...} $params Fields to update
+     * @return array{items?: list<array{kind?: 'goods'|'service', supplyCategory?: string, ...}>, ...}
      */
     public static function update(string $id, array $params): array
     {
@@ -125,6 +132,9 @@ class Quote
 
     /**
      * Convert an accepted quote to a draft invoice.
+     *
+     * The server copies each declared supplyCategory unchanged into the draft.
+     * An absent category stays undeclared; no service category is invented.
      *
      * @param string $id Quote ID
      * @return array<string, mixed> The new draft invoice

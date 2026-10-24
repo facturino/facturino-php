@@ -1,0 +1,145 @@
+{
+  "product": {
+    "id": "prod_supply",
+    "object": "product",
+    "name": "Online training",
+    "reference": "TRAIN-ONLINE",
+    "unitPrice": 10000,
+    "vatRate": 0,
+    "vatCode": "E",
+    "vatexCode": "VATEX-FR-CGI261-4",
+    "unit": "month",
+    "tags": ["online"],
+    "active": true,
+    "kind": "service",
+    "supplyCategory": "electronically_supplied_services"
+  },
+  "historicalProduct": {
+    "id": "prod_historical",
+    "object": "product",
+    "name": "Training",
+    "unitPrice": 10000,
+    "vatRate": 0,
+    "vatCode": "E",
+    "vatexCode": "VATEX-FR-261",
+    "unit": "month"
+  },
+  "quote": {
+    "id": "quo_supply",
+    "object": "quote",
+    "status": "draft",
+    "items": [
+      {
+        "id": "li_supply",
+        "description": "Online subscription",
+        "quantity": "1",
+        "unitPrice": 10000,
+        "vatRate": 2000,
+        "vatCode": "S",
+        "unit": "month",
+        "kind": "service",
+        "supplyCategory": "electronically_supplied_services"
+      }
+    ]
+  },
+  "historicalQuote": {
+    "id": "quo_historical",
+    "object": "quote",
+    "status": "draft",
+    "items": [
+      {
+        "id": "li_historical",
+        "description": "Subscription",
+        "quantity": "1",
+        "unitPrice": 10000,
+        "vatRate": 2000,
+        "vatCode": "S",
+        "unit": "month"
+      }
+    ]
+  },
+  "convertedDraft": {
+    "id": "inv_supply",
+    "object": "invoice",
+    "documentStatus": "draft",
+    "taxSource": null,
+    "items": [
+      {
+        "id": "li_supply",
+        "kind": "service",
+        "supplyCategory": "electronically_supplied_services"
+      }
+    ],
+    "commercialDraft": {
+      "priceMode": "tax_exclusive",
+      "totalCents": 10000,
+      "lines": [
+        {
+          "reference": "li_supply",
+          "description": "Online subscription",
+          "quantity": "1",
+          "unitAmount": 10000,
+          "kind": "service",
+          "supplyCategory": "electronically_supplied_services"
+        }
+      ]
+    }
+  },
+  "pendingDecision": {
+    "id": "taxdec_supply_pending",
+    "object": "tax_decision",
+    "taxSource": "facturino",
+    "status": "pending_verification",
+    "lines": [
+      {
+        "reference": "li_supply",
+        "category": null,
+        "treatment": null,
+        "rateCentipercent": null
+      }
+    ],
+    "totals": null,
+    "amountToCharge": null,
+    "issues": [
+      {
+        "code": "supply_category_not_declared",
+        "message": "Declare the supply category of the quote or draft line.",
+        "lineId": "li_supply"
+      }
+    ],
+    "notices": []
+  },
+  "finalDecision": {
+    "id": "taxdec_supply_final",
+    "object": "tax_decision",
+    "taxSource": "facturino",
+    "status": "final",
+    "lines": [
+      {
+        "reference": "li_supply",
+        "category": "services",
+        "rateCentipercent": 2000,
+        "amountHT": 10000,
+        "amountVAT": 2000,
+        "amountTTC": 12000
+      }
+    ],
+    "totals": {
+      "totalHT": 10000,
+      "totalVAT": 2000,
+      "totalTTC": 12000
+    },
+    "amountToCharge": 12000,
+    "invoiceChannel": "none",
+    "transactionReporting": "ereporting",
+    "paymentReporting": "ereporting",
+    "issues": [],
+    "notices": [
+      {
+        "code": "supply_category_not_declared",
+        "message": "Both service readings give the same complete tax result; services was retained.",
+        "lineId": "li_supply"
+      }
+    ]
+  }
+}

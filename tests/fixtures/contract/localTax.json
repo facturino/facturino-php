@@ -1,0 +1,84 @@
+{
+  "customer": {
+    "id": "cus_local_tax",
+    "object": "customer",
+    "name": "Client Saint-Martin",
+    "type": "company",
+    "taxStatus": "taxable"
+  },
+  "taxDecision": {
+    "id": "taxdec_local_tax",
+    "object": "tax_decision",
+    "taxSource": "facturino",
+    "status": "final",
+    "customerId": "cus_local_tax",
+    "currency": "eur",
+    "sellerProfile": {
+      "id": "stp_local_tax",
+      "localTaxRegistrations": [
+        {
+          "territory": "MF",
+          "reference": "MF-registration-fixture",
+          "effectiveFrom": "2026-09-01",
+          "effectiveTo": null
+        }
+      ]
+    },
+    "lines": [
+      {
+        "reference": "line-1",
+        "quantity": "1",
+        "amountHT": 10000,
+        "amountVAT": 0,
+        "amountTTC": 10400,
+        "localTax": {
+          "code": "tgca_mf",
+          "rateCentipercent": 400,
+          "amount": 400,
+          "reference": "CGIsm art. 252",
+          "exemption": null
+        }
+      }
+    ],
+    "totals": {
+      "totalHT": 10000,
+      "totalVAT": 0,
+      "totalLocalTax": 400,
+      "totalTTC": 10400
+    },
+    "amountToCharge": 10400,
+    "issues": [],
+    "notices": []
+  },
+  "invoice": {
+    "id": "inv_local_tax",
+    "object": "invoice",
+    "taxDecisionId": "taxdec_local_tax",
+    "currency": "eur",
+    "items": [
+      {
+        "id": "li_local_tax",
+        "taxLineRef": "line-1",
+        "quantity": "1",
+        "lineAmount": 10000,
+        "vatAmount": 0,
+        "lineTotal": 10400,
+        "localTax": {
+          "code": "tgca_mf",
+          "rateCentipercent": 400,
+          "amount": 400,
+          "reference": "CGIsm art. 252",
+          "exemption": null
+        }
+      }
+    ],
+    "totals": {
+      "totalHT": 10000,
+      "totalVAT": 0,
+      "totalLocalTax": 400,
+      "totalTTC": 10400,
+      "amountDue": 10400,
+      "amountPaid": 0
+    }
+  }
+}

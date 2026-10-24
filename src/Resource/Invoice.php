@@ -12,6 +12,15 @@ use Facturino\Util\Collection;
  *
  * Amounts are integers in centimes (10000 = 100.00 EUR).
  * VAT rates are integers in centipercent (2000 = 20.00%).
+ * Responses may carry `totals.totalLocalTax` (integer centimes) and
+ * `items[].localTax` (code, rateCentipercent, amount, reference, exemption).
+ * The local-tax rate is integer centipercent and its amount integer centimes;
+ * code and exemption are open strings, and exemption may be null. These fields
+ * are optional, including on historical invoices, and come from the decision.
+ * Saint-Martin TGCA is 4% with a registration in force, or 0 with a declared
+ * exemption and its mention, under both sources. totalLocalTax is included in
+ * totalTTC and the amount to collect. vatexCode stays an open string from the
+ * official CIUS-FR list; documents issued earlier keep their issued code.
  */
 class Invoice
 {

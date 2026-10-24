@@ -21,6 +21,8 @@ class CreditNote
      * through `creditedLines`. The rate, category, VATEX code and legal
      * mention are inherited from the invoice's snapshot, never restated —
      * there is no way to state VAT on a credit note.
+     * vatexCode remains an open string; an earlier issued document keeps the
+     * code it was issued with, including legacy spellings.
      *
      * A credited line states EITHER `quantity` or `amountTTC`, never both: they
      * are two ways of saying how much of the line is credited. Omit both to

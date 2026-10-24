@@ -9,6 +9,12 @@ use Facturino\Util\Collection;
 
 /**
  * Customer resource — /v1/customers
+ *
+ * INSEE legal categories 7, 8 and 9 need a declared taxStatus; without it the
+ * decision stays pending (business_status_not_evidenced, tax_status_not_declared).
+ * A legal person declared non_taxable with a VAT number is checked through VIES:
+ * valid makes services follow taxable-person rules (CGI art. 259-0); unreachable
+ * leaves vies_unavailable pending. The declaration sets declared_non_taxable.
  */
 class Customer
 {
@@ -20,6 +26,8 @@ class Customer
      * Each entry of `contacts[]` may carry a `role` of `billing`,
      * `technical` or `main`. The `billing` contact receives invoices
      * by default.
+     * `taxStatus` is optional: `taxable` or `non_taxable`, independently of
+     * `type`. Omit it when no taxable status is declared.
      *
      * @param array<string, mixed> $params          Customer data
      * @param string|null          $idempotencyKey  Idempotency key
@@ -51,6 +59,9 @@ class Customer
     /**
      * Retrieve a single customer.
      *
+     * The response may carry `taxStatus` (`taxable` or `non_taxable`);
+     * historical responses may omit it.
+     *
      * @param string $id Customer ID (cus_xxx)
      * @return array<string, mixed>
      */
@@ -65,6 +76,8 @@ class Customer
      * Each entry of `contacts[]` may carry a `role` of `billing`,
      * `technical` or `main`. The `billing` contact receives invoices
      * by default.
+     * `taxStatus` optionally sets `taxable` or `non_taxable`, independently
+     * of `type`; omitting it leaves the declared status unchanged.
      *
      * @param string               $id      Customer ID
      * @param array<string, mixed> $params  Fields to update

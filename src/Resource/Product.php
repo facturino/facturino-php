@@ -9,6 +9,17 @@ use Facturino\Util\Collection;
 
 /**
  * Product resource — /v1/products
+ *
+ * Products store and return optional `kind` (`goods` or `service`) and
+ * `supplyCategory`. The latter is an open string: `goods`, `services`,
+ * `electronically_supplied_services`, `deposit` and `ancillary_costs` are the
+ * current values. Missing historical fields stay absent; no category is assumed.
+ * `kind` classifies the document; `supplyCategory` declares its fiscal nature.
+ * Deposits and ancillary costs follow the document's principal operation.
+ *
+ * vatexCode is an open string from the official CIUS-FR list (88 codes).
+ * Legacy VATEX-FR-261 and VATEX-FR-AUTOLIQ inputs are stored and returned as
+ * VATEX-FR-CGI261-4 and VATEX-FR-AE. Documents issued earlier keep their code.
  */
 class Product
 {
@@ -17,9 +28,12 @@ class Product
     /**
      * Create a product.
      *
-     * @param array<string, mixed> $params          Product data
+     * Optional kind and supplyCategory are stored and returned, alongside
+     * tags and the open-string vatexCode.
+     *
+     * @param array{name: string, unitPrice: int, vatRate: int, vatCode: string, unit: string, description?: string, reference?: string, category?: string, tags?: list<string>, vatexCode?: string, kind?: 'goods'|'service', supplyCategory?: string, ...} $params Product data
      * @param string|null          $idempotencyKey  Idempotency key
-     * @return array<string, mixed>
+     * @return array{kind?: 'goods'|'service', supplyCategory?: string, vatexCode?: string, ...}
      */
     public static function create(array $params, ?string $idempotencyKey = null): array
     {
@@ -51,7 +65,7 @@ class Product
      * Retrieve a single product.
      *
      * @param string $id Product ID (prod_xxx)
-     * @return array<string, mixed>
+     * @return array{kind?: 'goods'|'service', supplyCategory?: string, vatexCode?: string, ...}
      */
     public static function retrieve(string $id): array
     {
@@ -61,9 +75,13 @@ class Product
     /**
      * Update a product.
      *
+     * reference, category and active are accepted alongside the price, VAT,
+     * tags, optional kind and open-string supplyCategory and vatexCode.
+     * Omitted fields are left unchanged; false keeps a product inactive.
+     *
      * @param string               $id      Product ID
-     * @param array<string, mixed> $params  Fields to update
-     * @return array<string, mixed>
+     * @param array{name?: string, description?: string, unitPrice?: int, vatRate?: int, vatCode?: string, unit?: string, reference?: string, category?: string, active?: bool, tags?: list<string>, vatexCode?: string, kind?: 'goods'|'service', supplyCategory?: string, ...} $params Fields to update
+     * @return array{kind?: 'goods'|'service', supplyCategory?: string, vatexCode?: string, ...}
      */
     public static function update(string $id, array $params): array
     {

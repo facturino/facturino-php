@@ -97,6 +97,51 @@ final class TaxDecisionTest extends TestCase
         \Facturino\TaxDecision::create($this->decisionParams(), '   ');
     }
 
+    public function testCreatePassesOpenLocalTaxExemptionsUnderBothSources(): void
+    {
+        $this->server->respondWith(201, self::FINAL_DECISION);
+
+        foreach (['facturino', 'integration'] as $source) {
+            foreach (['cgism_253', 'not_used_in_saint_martin', 'future_exemption'] as $exemption) {
+                $params = $this->decisionParams();
+                $params['taxSource'] = $source;
+                $params['lines'][0]['localTaxExemption'] = $exemption;
+                if ($source === 'integration') {
+                    $params['lines'][0]['vatRate'] = 0;
+                    $params['lines'][0]['vatCode'] = 'O';
+                    $params['lines'][0]['vatexCode'] = 'VATEX-EU-O';
+                    $params['lines'][0]['placeOfSupply'] = 'MF';
+                }
+
+                \Facturino\TaxDecision::create($params, 'local-tax-' . $source . '-' . $exemption);
+
+                $request = $this->server->lastRequest();
+                $this->assertSame('POST', $request['method']);
+                $this->assertSame('/v1/tax-decisions', $request['path']);
+                $this->assertSame($params, json_decode($request['body'], true, 512, JSON_THROW_ON_ERROR));
+            }
+        }
+    }
+
+    public function testRetrievePreservesLocalTaxOnDecisionsAndInvoices(): void
+    {
+        $bodies = json_decode(file_get_contents(__DIR__ . '/fixtures/contract/localTax.json'), true, 512, JSON_THROW_ON_ERROR);
+        $this->server->respondWith(200, json_encode($bodies['taxDecision'], JSON_THROW_ON_ERROR));
+
+        $decision = \Facturino\TaxDecision::retrieve('taxdec_local_tax');
+
+        $this->assertSame('GET', $this->server->lastRequest()['method']);
+        $this->assertSame('/v1/tax-decisions/taxdec_local_tax', $this->server->lastRequest()['path']);
+        $this->assertSame($bodies['taxDecision'], $decision);
+
+        $this->server->respondWith(200, json_encode($bodies['invoice'], JSON_THROW_ON_ERROR));
+        $invoice = \Facturino\Invoice::retrieve('inv_local_tax');
+
+        $this->assertSame('GET', $this->server->lastRequest()['method']);
+        $this->assertSame('/v1/invoices/inv_local_tax', $this->server->lastRequest()['path']);
+        $this->assertSame($bodies['invoice'], $invoice);
+    }
+
     public function testCreateRefusesAKeyLongerThanTheApiAccepts(): void
     {
         // Checked locally: an over-long key fails without a round trip.
@@ -497,6 +542,61 @@ final class TaxDecisionTest extends TestCase
 
         $body = json_decode($this->server->lastRequest()['body'], true);
         $this->assertSame('dispatched_to_buyer_territory', $body['lines'][0]['goodsMovement']);
+    }
+
+    public function testThePlaceOfSupplyRuleReachesAnIntegrationLine(): void
+    {
+        // Optional, `general` when absent, and the rule the declared place is
+        // checked under.
+        $this->server->respondWith(201, '{
+            "id": "taxdec_int3", "object": "tax_decision", "status": "final",
+            "taxSource": "integration"
+        }');
+
+        \Facturino\TaxDecision::create([
+            'taxSource' => 'integration',
+            'customerId' => 'cus_8f2k4m9n',
+            'effectiveAt' => '2026-09-15',
+            'currency' => 'eur',
+            'priceMode' => 'tax_exclusive',
+            'lines' => [
+                [
+                    'reference' => 'line-1', 'description' => 'Prestation', 'category' => 'services',
+                    'placeOfSupplyRule' => 'general', 'placeOfSupply' => 'FR-MET',
+                    'unitAmount' => 2900, 'quantity' => '1', 'vatRate' => 2000, 'vatCode' => 'S',
+                ],
+                [
+                    'reference' => 'line-2', 'description' => 'Prestation', 'category' => 'services',
+                    'unitAmount' => 2900, 'quantity' => '1', 'vatRate' => 2000, 'vatCode' => 'S',
+                ],
+            ],
+        ], 'order-rule-1');
+
+        $body = json_decode($this->server->lastRequest()['body'], true);
+        $this->assertSame('general', $body['lines'][0]['placeOfSupplyRule']);
+        $this->assertSame('FR-MET', $body['lines'][0]['placeOfSupply']);
+        // Absent stays absent: the API reads it as `general`.
+        $this->assertArrayNotHasKey('placeOfSupplyRule', $body['lines'][1]);
+    }
+
+    public function testASaleTakenBackOutReadsAsAReleaseWithNegativeAmounts(): void
+    {
+        $this->server->respondWith(200, '{
+            "object": "list", "url": "/v1/eu-threshold-ledgers/2026/entries",
+            "data": [{
+                "id": "rev_0123456789abcdef0123456789abcdef", "sequence": 4,
+                "kind": "reservation_released", "amountMin": -12000, "amountMax": -12000,
+                "taxDecisionId": "taxdec_c6_fixture"
+            }],
+            "has_more": false, "next_cursor": null
+        }');
+
+        $page = \Facturino\EuThresholdLedger::listEntries('2026');
+
+        $entry = $page['data'][0];
+        $this->assertSame('reservation_released', $entry['kind']);
+        $this->assertLessThan(0, $entry['amountMin']);
+        $this->assertLessThan(0, $entry['amountMax']);
     }
 
     public function testEuThresholdLedgerRoundTrips(): void

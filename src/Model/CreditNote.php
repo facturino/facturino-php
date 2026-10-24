@@ -21,6 +21,11 @@ final class CreditNote implements \JsonSerializable
     public readonly ?string $relatedInvoiceNumber;
     public readonly ?string $creditNoteType;
     public readonly ?string $reasonCode;
+    /**
+     * vatexCode stays an open string inherited from the invoice's frozen lines.
+     *
+     * @var list<array{vatexCode?: ?string, ...}>|null
+     */
     public readonly ?array $items;
     public readonly ?array $totals;
     public readonly ?bool $livemode;
@@ -28,6 +33,12 @@ final class CreditNote implements \JsonSerializable
     public readonly ?string $originalInvoiceId;
     public readonly ?string $originalTaxDecisionId;
     public readonly ?string $taxSource;
+    /**
+     * Fiscal position inherited from the invoice. Its `notices` key repeats the
+     * notices of the invoice it credits, in the shape of the entries of
+     * `TaxDecision::$notices`: what was retained and what the seller can do next.
+     * Empty when there is nothing to report; older snapshots may omit the key.
+     */
     public readonly mixed $taxSnapshot;
     public readonly ?string $documentStatus;
     public readonly ?string $transmissionStatus;
