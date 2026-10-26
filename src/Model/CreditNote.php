@@ -38,6 +38,12 @@ final class CreditNote implements \JsonSerializable
      * notices of the invoice it credits, in the shape of the entries of
      * `TaxDecision::$notices`: what was retained and what the seller can do next.
      * Empty when there is nothing to report; older snapshots may omit the key.
+     * Read-only obligationBasis inherits the invoice's frozen transmission
+     * basis: legal or voluntary_early_adoption, or null when none applies or
+     * history is unresolved. Historical snapshots may omit it; serialization
+     * preserves the omission.
+     *
+     * @var array{obligationBasis?: 'legal'|'voluntary_early_adoption'|null, ...}|null
      */
     public readonly mixed $taxSnapshot;
     public readonly ?string $documentStatus;

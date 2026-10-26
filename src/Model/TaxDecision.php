@@ -108,6 +108,12 @@ final class TaxDecision implements \JsonSerializable
     public readonly ?string $invoiceChannel;
     public readonly ?string $transactionReporting;
     public readonly ?string $paymentReporting;
+    /**
+     * Frozen transmission basis; null when none applies or history is unresolved.
+     *
+     * @var 'legal'|'voluntary_early_adoption'|null
+     */
+    public readonly ?string $obligationBasis;
     public readonly ?array $settledObligations;
     public readonly ?array $euB2cDestination;
     public readonly ?bool $foreignTaxReviewRequired;
@@ -188,6 +194,7 @@ final class TaxDecision implements \JsonSerializable
         $this->invoiceChannel = isset($data['invoiceChannel']) ? $data['invoiceChannel'] : null;
         $this->transactionReporting = isset($data['transactionReporting']) ? $data['transactionReporting'] : null;
         $this->paymentReporting = isset($data['paymentReporting']) ? $data['paymentReporting'] : null;
+        $this->obligationBasis = isset($data['obligationBasis']) ? $data['obligationBasis'] : null;
         $this->settledObligations = isset($data['settledObligations']) ? $data['settledObligations'] : null;
         $this->euB2cDestination = isset($data['euB2cDestination']) ? $data['euB2cDestination'] : null;
         $this->foreignTaxReviewRequired = isset($data['foreignTaxReviewRequired']) ? $data['foreignTaxReviewRequired'] : null;

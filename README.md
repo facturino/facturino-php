@@ -541,6 +541,26 @@ $hasMore = $collection->hasMore();
 > SDK: they are opened by the end recipient through a hosted page, not called
 > with an API key.
 
+## E-reporting declarations
+
+`\Facturino\Ereporting` returns declaration arrays. The optional
+`Facturino\Model\EReporting` view exposes these read-only response fields:
+
+| Key | Meaning |
+|---|---|
+| `obligationBasis` | Frozen transmission basis: `legal` for a legal obligation, `voluntary_early_adoption` for the seller's voluntary early adoption, or `null` when none applies or historical information is unresolved. |
+| `obligationDueFrom` | Seller's legal wave opening date (`YYYY-MM-DD`), frozen at reservation; `null` when unresolved. A batch covering several waves keeps the earliest date. |
+| `acknowledgedBy` | Who acknowledged receipt: `administration` (PPF), `platform`, or `null` without a known acknowledgement. Receipt is independent of acceptance. |
+| `skippedReason` | Open string or `null`. `nothing_to_declare` with `state: skipped` means local closure without transmission and an obligation whose `state` is `completed`: operations outside French VAT scope have no payment data to declare. |
+
+Historical responses may omit any of these fields. Typed properties then stay
+null; serialization preserves the distinction between an absent key and an
+explicit `null`. The API contract date remains `2026-09-01`.
+
+Declaration `state` stays an open string. `reserved` has not been transmitted;
+`blocked` leaves the obligation due. A historical `status: skipped` summary alone
+does not establish local closure: read `state`, `skippedReason` and `obligation`.
+
 ## Products and quote supply categories
 
 Products store and return optional `kind` (`goods` or `service`) and
@@ -806,6 +826,7 @@ Stripe carries it in `metadata` (`facturino_tax_decision_id`), PayPal in
 | `invoiceChannel` | `einvoicing` or `none` — whether the invoice travels the network. |
 | `transactionReporting` | `ereporting`, `none` or `outside_scope`. |
 | `paymentReporting` | `fr212`, `ereporting` or `none`. |
+| `obligationBasis` | Read-only frozen transmission basis: `legal`, `voluntary_early_adoption` or `null` when none applies or historical information is unresolved. Historical decisions may omit it. |
 | `settledObligations` | The axes French law settles DESPITE a non-final decision. `null` when final — the three axes above are then the settled ones. Each axis inside is `null` when it depends on the treatment that could not be concluded. It authorises nothing. |
 | `foreignTaxReviewRequired` | A foreign tax may apply; review it outside Facturino. |
 | `vies` | VIES status only (`valid`, `invalid`, `unavailable`, `invalid_format`). |
@@ -854,6 +875,12 @@ and credit notes freeze the notices of their decision in
 `$invoice['taxSnapshot']['notices']`; a credit note repeats those of the invoice
 it credits. The optional `Facturino\Model\TaxDecision` view hydrates the notices
 as `Facturino\Model\TaxDecisionNotice` objects.
+
+Invoices and credit notes also carry the read-only transmission basis in
+`taxSnapshot.obligationBasis`: `legal`, `voluntary_early_adoption` or `null`.
+The invoice freezes it with the decision; a credit note inherits the invoice's
+snapshot. Historical snapshots may omit the key. Both model views preserve
+the value, explicit nulls and omissions when serialized.
 
 ### Optional customer status and local taxes
 

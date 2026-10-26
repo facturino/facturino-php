@@ -18,6 +18,12 @@ use Facturino\Util\Collection;
  * count, documentType ("380" invoice, "381" credit note), originalInvoiceNumber
  * and originalInvoiceDate (the invoice a credit note corrects — both are
  * required to transmit a unit credit note, DGFiP G1.32).
+ *
+ * Responses may carry read-only obligationBasis (legal or
+ * voluntary_early_adoption), obligationDueFrom (the seller's legal wave
+ * opening date, YYYY-MM-DD) and acknowledgedBy (administration for the PPF,
+ * or platform). Each may be null or absent on historical responses.
+ * Acknowledgement identifies receipt, independently of acceptance.
  */
 class Ereporting
 {

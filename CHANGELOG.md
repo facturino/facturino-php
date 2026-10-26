@@ -6,6 +6,13 @@ project adheres to [Semantic Versioning](https://semver.org/) and
 
 ## [Unreleased]
 
+## [2.12.0] - 2026-10-26
+
+### Added
+- Optional read-only `Facturino\Model\EReporting::$skippedReason` (open string or `null`): `state: skipped` with `nothing_to_declare` closes a declaration without transmission and with a `completed` obligation when operations outside French VAT scope have no payment data to declare. Historical responses may omit the field.
+- Optional read-only `Facturino\Model\EReporting::$obligationBasis` (`legal`, `voluntary_early_adoption` or `null`), `$obligationDueFrom` (the seller's legal wave opening date, `YYYY-MM-DD`, or `null`) and `$acknowledgedBy` (`administration`, `platform` or `null`). Acknowledgement identifies receipt independently of acceptance; historical responses may omit these fields.
+- Optional read-only `Facturino\Model\TaxDecision::$obligationBasis` and `taxSnapshot.obligationBasis` on invoices and credit notes: the frozen transmission basis, with the same nullable values and historical omissions preserved. The API contract date remains 2026-09-01.
+
 ## [2.11.0] - 2026-10-24
 
 ### Added

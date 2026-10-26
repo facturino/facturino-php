@@ -68,6 +68,10 @@ use Facturino\HttpClient;
  *
  * Both sources produce the same decision object, feed the same reporting
  * obligations engine and back invoices the same way.
+ * Read-only obligationBasis freezes the transmission basis: legal or
+ * voluntary_early_adoption, or null when none applies or history is unresolved.
+ * It also appears in invoice and credit-note taxSnapshot; historical responses
+ * may omit it.
  *
  * `vatRate`, `vatCode` and `vatexCode` describe FRENCH VAT. Local taxes travel
  * separately in optional line `localTax` and `totals.totalLocalTax`; the

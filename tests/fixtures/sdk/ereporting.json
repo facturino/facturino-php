@@ -1,0 +1,56 @@
+{
+  "legal": {
+    "id": "rep_legal",
+    "object": "ereporting",
+    "type": "b2c",
+    "status": "accepted",
+    "state": "accepted",
+    "obligationBasis": "legal",
+    "obligationDueFrom": "2026-09-01",
+    "acknowledgedBy": "administration"
+  },
+  "voluntaryEarlyAdoption": {
+    "id": "rep_voluntary",
+    "object": "ereporting",
+    "type": "b2c",
+    "status": "submitted",
+    "state": "acknowledged",
+    "obligationBasis": "voluntary_early_adoption",
+    "obligationDueFrom": "2027-09-01",
+    "acknowledgedBy": "platform"
+  },
+  "explicitNull": {
+    "id": "rep_unresolved",
+    "object": "ereporting",
+    "type": "b2c",
+    "status": "draft",
+    "state": "reserved",
+    "obligationBasis": null,
+    "obligationDueFrom": null,
+    "acknowledgedBy": null,
+    "skippedReason": null
+  },
+  "nothingToDeclare": {
+    "id": "rep_nothing_to_declare",
+    "object": "ereporting",
+    "type": "payment_international",
+    "status": "skipped",
+    "state": "skipped",
+    "skippedReason": "nothing_to_declare",
+    "obligation": {
+      "state": "completed",
+      "reasonCode": null,
+      "reasonSource": null,
+      "owner": null,
+      "action": null,
+      "nextAttemptAt": null
+    }
+  },
+  "historical": {
+    "id": "rep_historical",
+    "object": "ereporting",
+    "type": "b2c",
+    "status": "submitted",
+    "state": "submitted"
+  }
+}

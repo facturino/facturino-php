@@ -48,6 +48,143 @@ final class ContractResponsesTest extends TestCase
         return $decode->invoke(null, json_encode($body, JSON_THROW_ON_ERROR));
     }
 
+    /** @return array<string, array<string, mixed>> */
+    private function eReportingFixtures(): array
+    {
+        return json_decode(file_get_contents(__DIR__ . '/fixtures/sdk/ereporting.json'), true, 512, JSON_THROW_ON_ERROR);
+    }
+
+    public function testEReportingHydratesTransmissionBasisAndAcknowledgement(): void
+    {
+        $fixtures = $this->eReportingFixtures();
+        foreach (['legal', 'voluntaryEarlyAdoption'] as $name) {
+            $body = $fixtures[$name];
+            $response = $this->decodeSdkResponse($body);
+            $model = Model\EReporting::fromArray($response);
+
+            $this->assertSame($body['obligationBasis'], $model->obligationBasis);
+            $this->assertSame($body['obligationDueFrom'], $model->obligationDueFrom);
+            $this->assertSame($body['acknowledgedBy'], $model->acknowledgedBy);
+            $this->assertSame($body['state'], $model->state);
+            $this->assertSame($body['status'], $model->status);
+            $this->assertSame($body, $response);
+            $this->assertSame($body, json_decode(json_encode($model, JSON_THROW_ON_ERROR), true, 512, JSON_THROW_ON_ERROR));
+        }
+    }
+
+    public function testEReportingPreservesExplicitNullTransmissionFields(): void
+    {
+        $body = $this->eReportingFixtures()['explicitNull'];
+        $response = $this->decodeSdkResponse($body);
+        $model = Model\EReporting::fromArray($response);
+
+        foreach (['obligationBasis', 'obligationDueFrom', 'acknowledgedBy', 'skippedReason'] as $field) {
+            $this->assertArrayHasKey($field, $model->rawData);
+            $this->assertNull($model->$field);
+        }
+        $this->assertSame($body, $response);
+        $this->assertSame($body, json_decode(json_encode($model, JSON_THROW_ON_ERROR), true, 512, JSON_THROW_ON_ERROR));
+    }
+
+    public function testHistoricalEReportingDoesNotInventTransmissionFields(): void
+    {
+        $body = $this->eReportingFixtures()['historical'];
+        $response = $this->decodeSdkResponse($body);
+        $model = Model\EReporting::fromArray($response);
+
+        foreach (['obligationBasis', 'obligationDueFrom', 'acknowledgedBy', 'skippedReason'] as $field) {
+            $this->assertArrayNotHasKey($field, $model->rawData);
+            $this->assertNull($model->$field);
+        }
+        $this->assertSame($body, $response);
+        $this->assertSame($body, json_decode(json_encode($model, JSON_THROW_ON_ERROR), true, 512, JSON_THROW_ON_ERROR));
+    }
+
+    public function testEReportingReadsSkippedDeclarationWithCompletedObligation(): void
+    {
+        $body = $this->eReportingFixtures()['nothingToDeclare'];
+        $response = $this->decodeSdkResponse($body);
+        $model = Model\EReporting::fromArray($response);
+
+        $this->assertSame('skipped', $model->state);
+        $this->assertSame('skipped', $model->status);
+        $this->assertSame('nothing_to_declare', $model->skippedReason);
+        $this->assertInstanceOf(Model\ObligationFollowUp::class, $model->obligation);
+        $this->assertSame('completed', $model->obligation->state);
+        $this->assertNull($model->obligation->action);
+        $this->assertSame($body, $response);
+        $this->assertSame($body, json_decode(json_encode($model, JSON_THROW_ON_ERROR), true, 512, JSON_THROW_ON_ERROR));
+    }
+
+    public function testEReportingPreservesFutureStateAndSkippedReason(): void
+    {
+        $body = $this->eReportingFixtures()['historical'];
+        $body['state'] = 'future_state';
+        $body['skippedReason'] = 'future_reason';
+        $response = $this->decodeSdkResponse($body);
+        $model = Model\EReporting::fromArray($response);
+
+        $this->assertSame('future_state', $model->state);
+        $this->assertSame('future_reason', $model->skippedReason);
+        $this->assertSame($body, $response);
+        $this->assertSame($body, json_decode(json_encode($model, JSON_THROW_ON_ERROR), true, 512, JSON_THROW_ON_ERROR));
+    }
+
+    public function testTheCorpusCarriesTheTransmissionBasis(): void
+    {
+        $this->assertSame('legal', $this->fixture('taxDecision')['obligationBasis']);
+        $snapshot = $this->fixture('invoice')['taxSnapshot'];
+        // The shared invoice is bound to a historical decision: the basis is omitted, not null.
+        $this->assertArrayNotHasKey('obligationBasis', $snapshot);
+    }
+
+    public function testTaxDecisionPreservesTransmissionBasisNullAndHistoricalOmission(): void
+    {
+        $body = $this->fixture('taxDecision');
+        foreach (['legal', 'voluntary_early_adoption', null] as $basis) {
+            $body['obligationBasis'] = $basis;
+            $response = $this->decodeSdkResponse($body);
+            $model = Model\TaxDecision::fromArray($response);
+
+            $this->assertSame($basis, $model->obligationBasis);
+            $this->assertArrayHasKey('obligationBasis', $model->rawData);
+            $this->assertSame($body, $response);
+            $this->assertSame($body, json_decode(json_encode($model, JSON_THROW_ON_ERROR), true, 512, JSON_THROW_ON_ERROR));
+        }
+
+        unset($body['obligationBasis']);
+        $response = $this->decodeSdkResponse($body);
+        $historical = Model\TaxDecision::fromArray($response);
+        $this->assertNull($historical->obligationBasis);
+        $this->assertArrayNotHasKey('obligationBasis', $historical->rawData);
+        $this->assertSame($body, $response);
+        $this->assertSame($body, json_decode(json_encode($historical, JSON_THROW_ON_ERROR), true, 512, JSON_THROW_ON_ERROR));
+    }
+
+    public function testDocumentSnapshotsPreserveTransmissionBasisNullAndHistoricalOmission(): void
+    {
+        foreach (['invoice' => Model\Invoice::class, 'creditNote' => Model\CreditNote::class] as $name => $class) {
+            $body = $this->fixture($name);
+            foreach (['legal', 'voluntary_early_adoption', null] as $basis) {
+                $body['taxSnapshot']['obligationBasis'] = $basis;
+                $response = $this->decodeSdkResponse($body);
+                $model = $class::fromArray($response);
+
+                $this->assertArrayHasKey('obligationBasis', $model->taxSnapshot);
+                $this->assertSame($basis, $model->taxSnapshot['obligationBasis']);
+                $this->assertSame($body, $response);
+                $this->assertSame($body, json_decode(json_encode($model, JSON_THROW_ON_ERROR), true, 512, JSON_THROW_ON_ERROR));
+            }
+
+            unset($body['taxSnapshot']['obligationBasis']);
+            $response = $this->decodeSdkResponse($body);
+            $historical = $class::fromArray($response);
+            $this->assertArrayNotHasKey('obligationBasis', $historical->taxSnapshot);
+            $this->assertSame($body, $response);
+            $this->assertSame($body, json_decode(json_encode($historical, JSON_THROW_ON_ERROR), true, 512, JSON_THROW_ON_ERROR));
+        }
+    }
+
     public function testProductResponsesParseAndSerializeOpenSupplyCategories(): void
     {
         foreach (['goods', 'services', 'electronically_supplied_services', 'deposit', 'ancillary_costs', 'future_supply'] as $category) {
@@ -174,6 +311,8 @@ final class ContractResponsesTest extends TestCase
         $body = $this->fixture('legal-category');
         $base = $this->fixture('taxDecision');
         $base['legalCategory'] = $body['legalCategory'];
+        // The consultation fixture predates obligationBasis.
+        unset($base['obligationBasis']);
         $this->assertSame($base, $body);
 
         $model = Model\TaxDecision::fromArray($body);
