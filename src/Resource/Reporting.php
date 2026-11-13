@@ -18,6 +18,11 @@ class Reporting
     /**
      * Get a VAT report for a given period.
      *
+     * The report is returned as an array with camelCase keys, as the API sends
+     * them: `object`, `period` (`start`, `end`), `vatBreakdown` (list of `rate`
+     * as a decimal string, `taxableAmount`, `vatAmount`), `totalHT`, `totalVAT`,
+     * `totalTTC` and `invoiceCount`. Amounts are integer centimes.
+     *
      * @param array<string, mixed> $params  Query parameters (period_start, period_end)
      * @return array<string, mixed>
      */
@@ -28,6 +33,13 @@ class Reporting
 
     /**
      * Get a revenue report for a given period.
+     *
+     * The report is returned as an array with camelCase keys, as the API sends
+     * them: `object`, `period` (`start`, `end`), `revenue` (`invoiced`,
+     * `creditNotes`, `net`), `payments` (`received`, `outstanding`),
+     * `invoiceCount` and `creditNoteCount`. With `group_by`, `breakdown` lists
+     * one item per month or quarter (`period`, `revenue`, `payments`,
+     * `invoiceCount`, `creditNoteCount`). Amounts are integer centimes.
      *
      * @param array<string, mixed> $params  Query parameters (period_start, period_end, group_by)
      * @return array<string, mixed>

@@ -1070,13 +1070,24 @@ if (isset($result['url'])) {
     do {
         sleep(2);
         $job = \Facturino\Job::retrieve($jobId);
-    } while ($job['status'] === 'pending');
+    } while (in_array($job['status'], ['pending', 'processing'], true));
 
     if ($job['status'] === 'completed') {
         $pdfUrl = $job['url'];
     }
 }
 ```
+
+An invoice export (`\Facturino\Export::exportInvoices()`) returns a job of type
+`invoice_export`. Without `statuses`, it includes credit notes (`avoirs/` folder
+of the ZIP), and `manifest.csv` carries additional columns. The archive holds at
+most 5 000 pieces; beyond that the job carries `truncated: true`. Once finished,
+the job also exposes `included` and `failed` (pieces in the archive and pieces
+that could not be generated).
+
+`\Facturino\Invoice::generateAuditTrailPdf()` is not available yet: the API
+answers `501 not_implemented` and creates no job. Use the JSON audit trail
+(`getAuditTrail`) meanwhile.
 
 ## Sandbox
 

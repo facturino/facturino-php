@@ -4,7 +4,18 @@ All notable changes to `facturino/facturino-php` are documented here. This
 project adheres to [Semantic Versioning](https://semver.org/) and
 [Keep a Changelog](https://keepachangelog.com/).
 
-## [Unreleased]
+## [2.13.0] - 2026-11-13
+
+### Fixed
+- `Reporting::vat()` and `Reporting::revenue()` documentation lists the camelCase keys the API sends (`vatBreakdown`, `totalHT`, `invoiceCount`, `revenue.creditNotes`, `creditNoteCount`, `breakdown`…). Reports are returned as arrays, as sent: no key changes.
+- The README job polling example waits while the job is `pending` or `processing`; it stopped at `processing` before.
+
+### Added
+- `Job::retrieve()` documentation: a job of type `invoice_export` carries the optional `included`, `failed` and `truncated` keys.
+
+### Changed
+- `Invoice::generateAuditTrailPdf()` is documented as not available yet: the API answers 501 `not_implemented` and creates no job. Use `Invoice::getAuditTrail()` meanwhile.
+- `Export::exportInvoices()` documentation: without `statuses`, credit notes are included in the `avoirs/` folder of the ZIP, `manifest.csv` carries additional columns, and the archive is limited to 5 000 pieces (`truncated: true` on the job).
 
 ## [2.12.0] - 2026-10-26
 

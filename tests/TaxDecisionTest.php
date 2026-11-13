@@ -85,7 +85,7 @@ final class TaxDecisionTest extends TestCase
         $this->assertSame('POST', $request['method']);
         $this->assertSame('/v1/tax-decisions', $request['path']);
         $this->assertSame('order-4711', $request['headers']['Idempotency-Key']);
-        $this->assertSame('facturino-php/2.12.0', $request['headers']['User-Agent']);
+        $this->assertSame('facturino-php/2.13.0', $request['headers']['User-Agent']);
         $this->assertSame('2026-09-01', $request['headers']['Facturino-Version']);
         $this->assertSame($this->decisionParams(), json_decode($request['body'], true));
         $this->assertSame(3480, $decision['amountToCharge']);

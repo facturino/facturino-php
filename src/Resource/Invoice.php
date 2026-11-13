@@ -374,10 +374,11 @@ class Invoice
     }
 
     /**
-     * Generate an audit trail PDF (async job).
+     * Not available yet: the API answers 501 `not_implemented` and creates no
+     * job. Use the JSON audit trail (getAuditTrail) meanwhile.
      *
      * @param string $id Invoice ID
-     * @return array<string, mixed> Job object
+     * @return array<string, mixed>
      */
     public static function generateAuditTrailPdf(string $id): array
     {

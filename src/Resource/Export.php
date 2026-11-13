@@ -38,7 +38,8 @@ class Export
     }
 
     /**
-     * Get any export job status. Returns download_url when completed.
+     * Get any export job status. Returns download_url when completed, and
+     * `truncated` for an invoice export.
      *
      * @param string $jobId Job ID
      * @return array<string, mixed>
@@ -51,7 +52,11 @@ class Export
     /**
      * Bulk export finalized invoices as ZIP (Factur-X PDF + CII XML). All plans.
      *
-     * With no params, every non-draft invoice is exported.
+     * With no params, every non-draft invoice is exported. Without `statuses`,
+     * credit notes are included too (`avoirs/` folder of the ZIP). `manifest.csv`
+     * lists every piece with its type, totals, due date, payment status and
+     * linked invoice. The archive holds at most 5 000 pieces; beyond that the job
+     * carries `truncated: true`.
      *
      * @param array<string, mixed> $params  Optional filters (period_start, period_end, statuses)
      * @return array<string, mixed> Job object (202 Accepted)
